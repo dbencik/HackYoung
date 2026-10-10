@@ -1,0 +1,84 @@
+{
+  "id": 20,
+  "slug": "password-security",
+  "title": "Password Security",
+  "module": 5,
+  "moduleName": "Web & App Security",
+  "difficulty": "Hacker",
+  "objective": "Understand how passwords are stored (hashing, salting), what rainbow tables are, and how to test your own password strength using hashcat — while learning about password managers and 2FA.",
+  "legalWarning": "Only test websites and applications you own or have explicit permission to test. Unauthorized access to web applications is illegal.",
+  "explanation": "If you think websites store your password as plain text, you'd be horrified to learn that some actually do — and that's how massive breaches happen. But properly built websites store a hash of your password, not the password itself.\n\nA hash function takes any input and produces a fixed-length output that looks like random characters. SHA-256 turns 'password123' into ef92b778bafe771e89245b89ecbc08a44a4e166c06659911881f383d4473e94f every single time. But here's the magic: you can't reverse a hash back to the original input. So when you log in, the website hashes what you typed and compares it to the stored hash — it never needs to know your actual password.\n\nBut hashing alone isn't enough. If two users both choose 'password123,' they'll have the same hash. Attackers build giant tables of pre-computed hashes called rainbow tables — lookup tables matching common passwords to their hashes. To defeat rainbow tables, websites add a random string called a salt to your password before hashing. If your salt is 'x7bQ9,' the website hashes 'x7bQ9password123' instead. Now every user gets a unique hash, even for the same password.\n\nModern password hashing uses algorithms like bcrypt, scrypt, or Argon2 that are intentionally slow — they might take 100 milliseconds to compute one hash. That sounds fast, but an attacker trying billions of combinations will be slowed from hours to centuries.\n\nTools like hashcat and John the Ripper are used by security professionals to test password strength. In this lesson, you'll create YOUR OWN test hashes and try to crack them — to understand why 'password123' fails in seconds while a 16-character random passphrase would take millennia.\n\nThe best defense? Use a password manager (like KeePassXC or Bitwarden) to generate and store unique 20+ character passwords for every site, and enable Two-Factor Authentication (2FA) everywhere. With 2FA, even if your password is cracked, the attacker still needs your phone.",
+  "commands": [
+    {
+      "command": "echo -n 'password123' | sha256sum",
+      "description": "Hashes the string 'password123' using SHA-256. The -n flag prevents echo from adding a newline (which would change the hash). This is how websites convert passwords into stored hashes.",
+      "expectedOutput": "ef92b778bafe771e89245b89ecbc08a44a4e166c06659911881f383d4473e94f  -",
+      "safety": "safe",
+      "troubleshooting": "If you get a different hash, make sure you used -n with echo. Without it, a newline character is included and the hash will be completely different.",
+      "legalNote": null
+    },
+    {
+      "command": "echo -n 'password123' | sha256sum && echo -n 'password123' | sha256sum",
+      "description": "Hashes the same input twice to prove that hash functions are deterministic — the same input ALWAYS produces the same output. This is why rainbow tables work.",
+      "expectedOutput": "ef92b778bafe771e89245b89ecbc08a44a4e166c06659911881f383d4473e94f  -\nef92b778bafe771e89245b89ecbc08a44a4e166c06659911881f383d4473e94f  -",
+      "safety": "safe",
+      "troubleshooting": null,
+      "legalNote": null
+    },
+    {
+      "command": "SALT=$(openssl rand -hex 8) && echo \"Salt: $SALT\" && echo -n \"${SALT}password123\" | sha256sum && echo -n \"${SALT}password123\" | sha256sum",
+      "description": "Demonstrates salting. First generates a random salt, then hashes the salt+password combination. Run this multiple times — the salt changes each time, so the hash changes too, even though the password is the same. This defeats rainbow tables.",
+      "expectedOutput": "Salt: a1b2c3d4e5f6a7b8\nf3a7... (unique hash)\nf3a7... (same hash as above, same salt+password)",
+      "safety": "safe",
+      "troubleshooting": "If openssl is not found, install it: 'sudo apt install openssl'. You can also generate a salt manually: SALT='mysalt123'.",
+      "legalNote": null
+    },
+    {
+      "command": "echo -n 'password123' | md5sum > ~/web-lab/test-hash.txt && cat ~/web-lab/test-hash.txt",
+      "description": "Creates an MD5 hash of a weak password and saves it to a file. MD5 is an old, insecure hash algorithm — perfect for our cracking demo. You'll try to crack YOUR OWN hash in the next step.",
+      "expectedOutput": "482c811da5d5b4bc6d497ffa98491e38  -",
+      "safety": "safe",
+      "troubleshooting": "Make sure ~/web-lab/ directory exists. Create it with 'mkdir -p ~/web-lab' if needed.",
+      "legalNote": null
+    },
+    {
+      "command": "echo '482c811da5d5b4bc6d497ffa98491e38' > ~/web-lab/hash-to-crack.txt && hashcat -m 0 -a 0 ~/web-lab/hash-to-crack.txt /usr/share/wordlists/rockyou.txt --force 2>/dev/null || echo 'hashcat finished (or use: john --format=raw-md5 ~/web-lab/hash-to-crack.txt --wordlist=/usr/share/wordlists/rockyou.txt)'",
+      "description": "Attempts to crack YOUR OWN MD5 hash using hashcat with the rockyou.txt wordlist (a list of real passwords leaked from the RockYou breach in 2009). Mode -m 0 is raw MD5, -a 0 is dictionary attack.",
+      "expectedOutput": "482c811da5d5b4bc6d497ffa98491e38:password123\n\nSession..........: hashcat\nStatus...........: Cracked",
+      "safety": "restricted",
+      "troubleshooting": "If hashcat isn't installed: 'sudo apt install hashcat'. If rockyou.txt is compressed: 'sudo gunzip /usr/share/wordlists/rockyou.txt.gz'. If hashcat can't use GPU in VM, add --force flag. Alternative: use 'john' (John the Ripper) instead.",
+      "legalNote": "You are cracking YOUR OWN test hash with a known password. NEVER use hashcat or similar tools to crack passwords belonging to others — this is illegal."
+    },
+    {
+      "command": "python3 -c \"\nimport hashlib, time\npasswords = ['password123', 'letmein', 'Kx9#mP2$vL7@nQ4!']\nfor p in passwords:\n    start = time.time()\n    h = hashlib.sha256(p.encode()).hexdigest()\n    elapsed = time.time() - start\n    print(f'{p:25s} -> {h[:20]}... ({elapsed:.6f}s)')\nprint()\nprint('All three hash in the same time, but cracking time differs hugely:')\nprint('password123     -> found in rockyou.txt in seconds')\nprint('letmein         -> also in rockyou.txt, seconds')\nprint('Kx9#mP2\\$vL7@nQ4! -> NOT in any wordlist, would take centuries to brute-force')\n\"",
+      "description": "Compares hashing speed for weak vs strong passwords. Hashing is fast for any password, but cracking depends on whether the password appears in wordlists or can be guessed. Strong random passwords are practically uncrackable.",
+      "expectedOutput": "password123               -> ef92b778bafe771e... (0.000012s)\nletmein                   -> 1c8bfe8f801d79745... (0.000008s)\nKx9#mP2$vL7@nQ4!          -> 7f3a2c... (0.000009s)\n\nAll three hash in the same time, but cracking time differs hugely:\npassword123     -> found in rockyou.txt in seconds\nletmein         -> also in rockyou.txt, seconds\nKx9#mP2$vL7@nQ4! -> NOT in any wordlist, would take centuries to brute-force",
+      "safety": "safe",
+      "troubleshooting": null,
+      "legalNote": null
+    },
+    {
+      "command": "which keepassxc 2>/dev/null && echo 'KeePassXC is installed!' || echo 'Install a password manager: sudo apt install keepassxc\nOr use Bitwarden (browser extension) for cloud sync.\nA password manager generates and stores unique 20+ char passwords for every site.\nCombined with 2FA (TOTP apps like Aegis or Google Authenticator), your accounts become extremely hard to breach.'",
+      "description": "Checks if the KeePassXC password manager is installed and explains why password managers + 2FA are the best defense. Password managers eliminate password reuse — the #1 cause of account compromise.",
+      "expectedOutput": "Install a password manager: sudo apt install keepassxc\nOr use Bitwarden (browser extension) for cloud sync.\nA password manager generates and stores unique 20+ char passwords for every site.\nCombined with 2FA (TOTP apps like Aegis or Google Authenticator), your accounts become extremely hard to breach.",
+      "safety": "safe",
+      "troubleshooting": null,
+      "legalNote": null
+    },
+    {
+      "command": "rm ~/web-lab/test-hash.txt ~/web-lab/hash-to-crack.txt 2>/dev/null; echo 'Password lab cleaned up.'",
+      "description": "Removes the test hash files. Always clean up after security labs.",
+      "expectedOutput": "Password lab cleaned up.",
+      "safety": "safe",
+      "troubleshooting": null,
+      "legalNote": null
+    }
+  ],
+  "challenge": {
+    "question": "A website is breached and the database is leaked. The passwords are stored as unsalted MD5 hashes. Why is this catastrophic, and what should the website have used instead?",
+    "hint": "Think about what 'unsalted' means and what tools/tables already exist for MD5 hashes. Then think about what modern alternative would make cracking impractical.",
+    "answer": "Unsalted MD5 is catastrophic because: (1) MD5 is fast to compute, so attackers can try billions of guesses per second; (2) without salt, identical passwords produce identical hashes, so one cracked hash reveals all users with that password; (3) massive rainbow tables for MD5 already exist online — common passwords can be looked up instantly without any computation. The website should have used bcrypt, scrypt, or Argon2 with per-user salts. These algorithms are intentionally slow (making brute force impractical) and automatically include unique salts."
+  },
+  "realWorld": "In 2012, LinkedIn was breached and 6.5 million password hashes were posted online. They were stored as unsalted SHA-1 hashes. Within hours, security researchers had cracked over 60% of them using rainbow tables and dictionary attacks. In 2016, it was revealed that the actual breach was 117 million accounts. LinkedIn was forced to invalidate all passwords and switch to bcrypt — something they should have done from the start.",
+  "funFact": "The rockyou.txt wordlist used by hackers worldwide comes from a real data breach. In 2009, the social media app RockYou stored 32 million passwords in PLAIN TEXT (not even hashed!). When breached, the leaked passwords became the most popular cracking wordlist in history. The most common password in the list? '123456' — used by 290,000 people."
+}

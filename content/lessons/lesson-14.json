@@ -1,0 +1,76 @@
+{
+  "id": 14,
+  "slug": "scanning-wifi-networks",
+  "title": "Scanning WiFi Networks",
+  "module": 4,
+  "moduleName": "WiFi & Wireless Security",
+  "difficulty": "Apprentice",
+  "objective": "Learn how to put your WiFi adapter into monitor mode and use airodump-ng to scan and analyze your own wireless network traffic.",
+  "legalWarning": "Only scan networks and devices you own. Scanning others' networks without permission is illegal under the Computer Fraud and Abuse Act (US), Computer Misuse Act (UK), and similar laws worldwide. Penalties include fines and prison.",
+  "explanation": "In the last lesson, you learned how WiFi works. Now you're going to see what WiFi traffic actually looks like flying through the air. This is where things get really interesting — and where you need to be extra careful about the law.\n\nNormally, your WiFi card is in 'managed mode' — it only listens to traffic meant for YOUR device. That's like only reading letters addressed to you. But there's another mode called 'monitor mode' that lets your card listen to ALL WiFi traffic in the area. It's like having a radio scanner that picks up every frequency at once.\n\nMonitor mode is essential for WiFi security testing because it lets you see:\n- Every WiFi network nearby (including hidden ones)\n- Every device connected to those networks\n- The type of encryption each network uses\n- The signal strength and channel of every access point\n- Handshake packets (which you'd need to test password strength on YOUR network)\n\nThe main tools for this are from the aircrack-ng suite, which comes pre-installed on Kali Linux:\n- **airmon-ng**: Puts your WiFi adapter into monitor mode\n- **airodump-ng**: Captures and displays wireless traffic in real-time\n- **aircrack-ng**: Tests password strength (we'll cover this later)\n\nNot every WiFi adapter supports monitor mode. Your laptop's built-in WiFi card probably doesn't. You'll need a compatible external USB adapter. The most popular ones for learning are the Alfa AWUS036ACH and the TP-Link TL-WN722N (v1 only — later versions removed the chipset that supports monitor mode).\n\nWhen you run airodump-ng, you'll see two sections:\n- **Top section**: Access points (routers) with their BSSID (MAC address), channel, encryption type, and SSID (network name)\n- **Bottom section**: Client devices (phones, laptops) with their MAC addresses and which access point they're connected to\n\nIMPORTANT: While monitor mode lets you SEE traffic from all nearby networks, you must ONLY analyze your own network's data. Capturing other people's WiFi handshakes or traffic without permission is wiretapping — a federal crime in most countries.",
+  "commands": [
+    {
+      "command": "sudo airmon-ng check kill",
+      "description": "Kill processes that could interfere with monitor mode. NetworkManager and wpa_supplicant often grab the WiFi card and prevent it from entering monitor mode. This command stops them.",
+      "expectedOutput": "hackeryoung@kali:~$ sudo airmon-ng check kill\nKilling these processes:\n\n    PID Name\n    543 wpa_supplicant\n    612 NetworkManager",
+      "safety": "restricted",
+      "troubleshooting": "This will disconnect you from WiFi. Make sure you're connected via Ethernet or have another way to access the internet before running this. To restore networking later: 'sudo systemctl restart NetworkManager'.",
+      "legalNote": "Only run this on YOUR home network. Scanning other networks is illegal."
+    },
+    {
+      "command": "sudo airmon-ng start wlan0",
+      "description": "Put your wireless adapter (wlan0) into monitor mode. The interface will be renamed to wlan0mon (or sometimes mon0). This allows your card to capture all nearby WiFi traffic.",
+      "expectedOutput": "hackeryoung@kali:~$ sudo airmon-ng start wlan0\nPHY     Interface       Driver          Chipset\nphy0    wlan0           ath9k_htc       Qualcomm Atheros AR9271\n\t\t(mac80211 monitor mode vif enabled for [phy0]wlan0 on [phy0]wlan0mon)\n\t\t(mac80211 station mode vif disabled for [phy0]wlan0)",
+      "safety": "restricted",
+      "troubleshooting": "If you get 'no such device' or 'failed', your adapter may not support monitor mode. Check 'iw list' and look for 'monitor' under 'Supported interface modes'. If it's not listed, you need a different adapter.",
+      "legalNote": "Only run this on YOUR home network. Scanning other networks is illegal."
+    },
+    {
+      "command": "sudo airodump-ng wlan0mon",
+      "description": "Start capturing WiFi traffic on all channels. Shows all visible access points and connected clients in real-time. Press Ctrl+C to stop. Look for YOUR network's BSSID and channel.",
+      "expectedOutput": "hackeryoung@kali:~$ sudo airodump-ng wlan0mon\n CH  6 ][ Elapsed: 30 s\n\n BSSID              PWR  Beacons    #Data  CH   MB   ENC   CIPHER  AUTH  ESSID\n AA:BB:CC:DD:EE:FF  -45  142        89     6    270  WPA2  CCMP    PSK   MyHomeWiFi\n 11:22:33:44:55:66  -67  98         23     1    54   WPA2  CCMP    PSK   Neighbors_Net\n 77:88:99:AA:BB:CC  -82  45         3      11   54   WEP   WEP           OldRouter\n\n BSSID              STATION            PWR   Rate   Lost  Frames  Notes  Probes\n AA:BB:CC:DD:EE:FF  DD:EE:FF:11:22:33  -32   54e-54     0     47         MyHomeWiFi\n AA:BB:CC:DD:EE:FF  44:55:66:77:88:99  -58   24e-24     2     18         MyHomeWiFi",
+      "safety": "restricted",
+      "troubleshooting": "If you see no networks, try specifying the band: 'sudo airodump-ng --band abg wlan0mon' to scan both 2.4 and 5 GHz. If output is garbled, resize your terminal window — airodump-ng needs a wide terminal.",
+      "legalNote": "Only run this on YOUR home network. Scanning other networks is illegal."
+    },
+    {
+      "command": "sudo airodump-ng --bssid AA:BB:CC:DD:EE:FF -c 6 wlan0mon",
+      "description": "Lock onto YOUR access point's specific BSSID and channel. Replace AA:BB:CC:DD:EE:FF with your router's BSSID and 6 with your channel. This filters out all other networks.",
+      "expectedOutput": "hackeryoung@kali:~$ sudo airodump-ng --bssid AA:BB:CC:DD:EE:FF -c 6 wlan0mon\n CH  6 ][ Elapsed: 45 s\n\n BSSID              PWR  Beacons    #Data  CH   MB   ENC   CIPHER  AUTH  ESSID\n AA:BB:CC:DD:EE:FF  -43  287        156    6    270  WPA2  CCMP    PSK   MyHomeWiFi\n\n BSSID              STATION            PWR   Rate   Lost  Frames  Notes  Probes\n AA:BB:CC:DD:EE:FF  DD:EE:FF:11:22:33  -30   54e-54     0     92\n AA:BB:CC:DD:EE:FF  44:55:66:77:88:99  -56   24e-24     1     34\n AA:BB:CC:DD:EE:FF  AA:11:BB:22:CC:33  -71   11e-11     5     12",
+      "safety": "restricted",
+      "troubleshooting": "Make sure the BSSID and channel are correct — copy them exactly from the previous airodump-ng output. If the target disappears, it might have changed channels (some routers do this automatically).",
+      "legalNote": "Only run this on YOUR home network. Scanning other networks is illegal."
+    },
+    {
+      "command": "sudo airodump-ng --bssid AA:BB:CC:DD:EE:FF -c 6 -w /tmp/my_capture wlan0mon",
+      "description": "Same as above but saves the captured data to files. The -w flag writes output to /tmp/my_capture-01.cap (and other formats). This capture file can be analyzed later.",
+      "expectedOutput": "hackeryoung@kali:~$ sudo airodump-ng --bssid AA:BB:CC:DD:EE:FF -c 6 -w /tmp/my_capture wlan0mon\n CH  6 ][ Elapsed: 1 min ][ WPA handshake: AA:BB:CC:DD:EE:FF\n\n BSSID              PWR  Beacons    #Data  CH   MB   ENC   CIPHER  AUTH  ESSID\n AA:BB:CC:DD:EE:FF  -42  412        243    6    270  WPA2  CCMP    PSK   MyHomeWiFi",
+      "safety": "restricted",
+      "troubleshooting": "The capture creates multiple files: .cap (packet data), .csv (text summary), .kismet.csv, .kismet.netxml. The .cap file is what tools like aircrack-ng and Wireshark use. If you see 'WPA handshake: ...' in the top-right, you've captured a handshake from YOUR network.",
+      "legalNote": "Only run this on YOUR home network. Scanning other networks is illegal."
+    },
+    {
+      "command": "sudo airmon-ng stop wlan0mon",
+      "description": "Take your adapter out of monitor mode and back to managed mode. Always do this when you're done testing so you can reconnect to WiFi normally.",
+      "expectedOutput": "hackeryoung@kali:~$ sudo airmon-ng stop wlan0mon\nPHY     Interface       Driver          Chipset\nphy0    wlan0mon        ath9k_htc       Qualcomm Atheros AR9271\n\t\t(mac80211 station mode vif enabled on [phy0]wlan0)\n\t\t(mac80211 monitor mode vif disabled for [phy0]wlan0mon)",
+      "safety": "restricted",
+      "troubleshooting": "After stopping monitor mode, restart NetworkManager to reconnect: 'sudo systemctl restart NetworkManager'. Your WiFi should automatically reconnect within a few seconds.",
+      "legalNote": "Only run this on YOUR home network. Scanning other networks is illegal."
+    },
+    {
+      "command": "sudo systemctl restart NetworkManager",
+      "description": "Restart the NetworkManager service to restore normal WiFi connectivity after exiting monitor mode. Your adapter will reconnect to your saved WiFi network.",
+      "expectedOutput": "hackeryoung@kali:~$ sudo systemctl restart NetworkManager\nhackeryoung@kali:~$",
+      "safety": "restricted",
+      "troubleshooting": "If WiFi doesn't reconnect automatically, try 'nmcli dev wifi connect MyHomeWiFi password YOUR_PASSWORD'. If the interface name changed, check 'ip link' to find the current name.",
+      "legalNote": "Only run this on YOUR home network. Scanning other networks is illegal."
+    }
+  ],
+  "challenge": {
+    "question": "Put your adapter into monitor mode and run airodump-ng on YOUR network only. How many client devices are connected? Can you identify which device is which by matching MAC addresses? (Hint: check your router's admin page for a device list to compare.)",
+    "hint": "First find your network's BSSID and channel with a general 'sudo airodump-ng wlan0mon' scan. Then lock onto it with '--bssid' and '-c'. Count the entries in the STATION section. To identify devices, look up the first 6 characters of each MAC address at macvendors.com — they reveal the manufacturer (Apple, Samsung, etc.).",
+    "answer": "The number of clients depends on your household. Each phone, laptop, tablet, smart TV, and IoT device will appear as a separate STATION entry. The MAC address prefix reveals the manufacturer — 'AC:BC:32' is Apple, 'DC:A6:32' is Raspberry Pi, 'F4:F5:D8' is Google. Comparing with your router's admin page device list confirms which physical device matches which MAC."
+  },
+  "realWorld": "In 2019, a man in Australia was arrested after using aircrack-ng tools to crack his neighbor's WiFi password and use their internet for months. He was caught when the neighbor noticed unusual devices on their network and reported it to police. Digital forensics traced the intrusion to his laptop, which still had the captured handshake files and cracked password stored. He was charged under Australia's Criminal Code Act with unauthorized access to a computer system. Even though he 'just' used their internet, the penalties included up to 2 years in prison.",
+  "funFact": "Your WiFi adapter in monitor mode can see something called 'probe requests' — these are your phone constantly shouting the names of every WiFi network it has ever connected to. Walking through a city, your phone broadcasts: 'Is Starbucks_WiFi here? Is Airport_Free here? Is Mom_House here?' This reveals your travel history to anyone listening. Modern phones now randomize their MAC address to reduce this privacy leak, but many still broadcast probe requests with real network names."
+}

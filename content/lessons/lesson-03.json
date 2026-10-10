@@ -1,0 +1,68 @@
+{
+  "id": 3,
+  "slug": "setting-up-your-lab",
+  "title": "Setting Up Your Lab",
+  "module": 1,
+  "moduleName": "The Hacker Mindset",
+  "difficulty": "Script Kiddie",
+  "objective": "Set up a safe, isolated hacking lab using VirtualBox and Kali Linux so you never practice on real networks.",
+  "legalWarning": null,
+  "explanation": "Before you touch a single hacking tool, you need a lab. This is non-negotiable. Professional penetration testers never test on production systems without explicit authorization, and you should never practice on any network or system you don't own. Your lab is your safe space — a virtual playground where you can break things, experiment, and learn without any legal risk.\n\nWe'll use VirtualBox, a free virtualization tool from Oracle, to create a virtual machine (VM). A VM is basically a computer inside your computer. It runs its own operating system, has its own network, and is completely isolated from your real system. If you accidentally download malware or break something, you just delete the VM and start over. No harm done.\n\nInside that VM, we'll install Kali Linux — the industry-standard operating system for penetration testing. Kali comes pre-loaded with over 600 security tools, from network scanners to password crackers to wireless attack tools. It's free, open source, and used by professional security teams worldwide. But remember: Kali is just a toolbox. Having a toolbox doesn't make you a carpenter, and having Kali doesn't make you a hacker. The skills come from understanding what each tool does and when to use it.\n\nWhen creating your VM, give it at least 2 GB of RAM and 20 GB of disk space. Set the network adapter to 'Internal Network' or 'Host-Only' when you're practicing attacks — this ensures your tools never accidentally reach the real internet or your home network. You can switch to 'NAT' temporarily when you need to download updates.\n\nPro tip: after setting up Kali and getting everything working, take a snapshot. A snapshot saves the exact state of your VM. If you mess something up later, you can restore to that clean snapshot in seconds instead of reinstalling everything from scratch.\n\nYour lab is your dojo. Everything you learn from this point forward happens here.",
+  "commands": [
+    {
+      "command": "vboxmanage --version",
+      "description": "Checks if VirtualBox is installed and shows the version. Run this on your HOST machine (not inside the VM) to verify the installation.",
+      "expectedOutput": "7.0.14r161104",
+      "safety": "safe",
+      "troubleshooting": "If you get 'command not found', VirtualBox isn't installed or not in your PATH. Download it from virtualbox.org and install it first.",
+      "legalNote": null
+    },
+    {
+      "command": "vboxmanage createvm --name \"KaliLab\" --ostype Debian_64 --register",
+      "description": "Creates a new virtual machine named 'KaliLab' configured for 64-bit Debian (Kali is based on Debian). The --register flag adds it to your VirtualBox list.",
+      "expectedOutput": "Virtual machine 'KaliLab' is created and registered.",
+      "safety": "safe",
+      "troubleshooting": "If you get an error about 'ostype', run 'vboxmanage list ostypes | grep -i debian' to find the exact name for your version.",
+      "legalNote": null
+    },
+    {
+      "command": "vboxmanage modifyvm \"KaliLab\" --memory 2048 --cpus 2 --vram 128",
+      "description": "Configures the VM with 2 GB RAM, 2 CPU cores, and 128 MB video memory. These are the minimum recommended specs for Kali Linux with a graphical desktop.",
+      "expectedOutput": "",
+      "safety": "safe",
+      "troubleshooting": "If you get a memory error, your host machine might not have enough RAM. Try --memory 1024 instead, but Kali will run slowly.",
+      "legalNote": null
+    },
+    {
+      "command": "vboxmanage modifyvm \"KaliLab\" --nic1 intnet --intnet1 \"hacklab\"",
+      "description": "Sets the network adapter to 'Internal Network' mode named 'hacklab'. This creates a completely isolated network — your VM can't reach the internet or your home network. This is the SAFE way to practice.",
+      "expectedOutput": "",
+      "safety": "active",
+      "troubleshooting": "If you need internet temporarily (for updates), switch to NAT mode: 'vboxmanage modifyvm \"KaliLab\" --nic1 nat'. Switch back to intnet when you're done updating.",
+      "legalNote": null
+    },
+    {
+      "command": "vboxmanage snapshot \"KaliLab\" take \"CleanInstall\" --description \"Fresh Kali install, fully updated\"",
+      "description": "Takes a snapshot of your VM's current state. If you break something later, you can restore to this clean state instantly.",
+      "expectedOutput": "Snapshot taken. UUID: a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "safety": "safe",
+      "troubleshooting": "Snapshots use disk space. If you're low on space, delete old snapshots with 'vboxmanage snapshot \"KaliLab\" delete <name>'.",
+      "legalNote": null
+    },
+    {
+      "command": "sha256sum kali-linux-2024.1-installer-amd64.iso",
+      "description": "Calculates the SHA-256 hash of the downloaded Kali ISO file. Compare this with the official hash on kali.org to verify the download wasn't tampered with. ALWAYS verify your downloads!",
+      "expectedOutput": "c150608cad5f8ec71608d0713b64e4a3ab5c8e6de79af3e98a114... kali-linux-2024.1-installer-amd64.iso",
+      "safety": "safe",
+      "troubleshooting": "If the hash doesn't match the one on kali.org, delete the ISO and re-download it. A mismatched hash means the file is corrupted or possibly compromised.",
+      "legalNote": null
+    }
+  ],
+  "challenge": {
+    "question": "Why should you set your VM's network adapter to 'Internal Network' mode instead of 'Bridged Adapter' when practicing with hacking tools?",
+    "hint": "Think about what 'Bridged Adapter' does — it connects your VM directly to your home network, as if it were a physical device plugged into your router.",
+    "answer": "Bridged Adapter connects the VM directly to your real home network, meaning any scanning or attack tools you run could accidentally reach real devices (your family's phones, smart TVs, your router). Internal Network mode creates a completely isolated virtual network where your tools can only talk to other VMs — they can never reach the real world."
+  },
+  "realWorld": "In 2017, Marcus Hutchins (MalwareTech), a 22-year-old British security researcher, accidentally stopped the WannaCry ransomware attack that infected 230,000 computers across 150 countries by registering a domain name he found in the malware's code. He was hailed as a hero — but was later arrested by the FBI for malware he had written as a teenager. He pled guilty and received no prison time, but the case showed how past actions can catch up with you. Today he's a respected security researcher who advocates for safe, legal security research.",
+  "funFact": "Kali Linux is named after the Hindu goddess Kali, the goddess of destruction and transformation. The developers chose the name because penetration testing is about finding and destroying vulnerabilities to transform security for the better. Kali Linux contains over 600 pre-installed security tools — it would take years to master them all."
+}

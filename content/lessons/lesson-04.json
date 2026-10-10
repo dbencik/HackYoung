@@ -1,0 +1,84 @@
+{
+  "id": 4,
+  "slug": "your-first-commands-in-kali",
+  "title": "Your First Commands in Kali",
+  "module": 1,
+  "moduleName": "The Hacker Mindset",
+  "difficulty": "Script Kiddie",
+  "objective": "Learn essential Linux terminal commands for navigation and network basics inside your Kali VM.",
+  "legalWarning": null,
+  "explanation": "Welcome to Kali Linux! That dark terminal staring back at you might look intimidating, but it's about to become your best friend. Every serious hacker works primarily in the terminal (also called the command line or shell) because graphical tools hide what's really happening. In the terminal, you see everything — every packet, every process, every connection.\n\nLet's start with the absolute basics. The terminal shows you a prompt that looks like this: hackeryoung@kali:~$ — this tells you your username (hackeryoung), your machine name (kali), and your current directory (~, which means your home folder). Everything you type appears after the $ sign.\n\nLinux organizes files in a tree structure starting from / (root). Your home directory is /home/hackeryoung. You navigate using 'cd' (change directory), see where you are with 'pwd' (print working directory), and list files with 'ls'. These three commands are like walking, looking, and opening your eyes — you'll use them constantly.\n\nNow for the exciting part: network commands. 'ifconfig' and 'ip addr' show your network interfaces and IP addresses. These are the first commands any penetration tester runs on a new system. You need to know your own IP address before you can do anything on a network. 'ping' sends a small packet to another machine and waits for a response — it's the simplest way to check if a host is alive and reachable.\n\nOne critical concept: in Linux, almost everything is a file. Your network interfaces, your hardware devices, even running processes — they're all represented as files somewhere in the filesystem. This is why the terminal is so powerful: if you can read and manipulate files, you can control almost everything on the system.\n\nPractice these commands until they become muscle memory. In the coming lessons, every tool we use builds on these foundations. You can't run Wireshark if you don't know your network interface name. You can't use Nmap if you don't know your IP address. Master the basics first.",
+  "commands": [
+    {
+      "command": "pwd",
+      "description": "Print Working Directory — shows the full path of where you currently are in the filesystem. This is your 'you are here' on the map.",
+      "expectedOutput": "/home/hackeryoung",
+      "safety": "safe",
+      "troubleshooting": null,
+      "legalNote": null
+    },
+    {
+      "command": "ls -la",
+      "description": "Lists all files in the current directory including hidden files (starting with a dot), with detailed information like permissions, owner, size, and modification date.",
+      "expectedOutput": "total 32\ndrwxr-xr-x  4 hackeryoung hackeryoung 4096 Oct 10 14:00 .\ndrwxr-xr-x  3 root        root        4096 Oct 10 13:55 ..\n-rw-r--r--  1 hackeryoung hackeryoung  220 Oct 10 13:55 .bash_logout\n-rw-r--r--  1 hackeryoung hackeryoung 3526 Oct 10 13:55 .bashrc\ndrwxr-xr-x  3 hackeryoung hackeryoung 4096 Oct 10 14:00 Desktop",
+      "safety": "safe",
+      "troubleshooting": "If you see very few files, that's normal for a fresh install. The -a flag shows hidden files (starting with .) that are normally invisible.",
+      "legalNote": null
+    },
+    {
+      "command": "cd /etc && ls",
+      "description": "Changes to the /etc directory (where system configuration files live) and lists its contents. Most Linux configurations are plain text files stored here.",
+      "expectedOutput": "adduser.conf  alternatives  apt  bash.bashrc  ca-certificates  cron.d  default  dhcp  environment  fstab  group  hostname  hosts  ...",
+      "safety": "safe",
+      "troubleshooting": "If you get 'Permission denied', you can still list files but may not be able to read all of them. Use 'sudo' before commands that need root access.",
+      "legalNote": null
+    },
+    {
+      "command": "ifconfig",
+      "description": "Shows all network interfaces and their IP addresses. Look for 'eth0' (wired) or 'wlan0' (wireless). The 'inet' line shows your IPv4 address.",
+      "expectedOutput": "eth0: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500\n        inet 10.0.2.15  netmask 255.255.255.0  broadcast 10.0.2.255\n        inet6 fe80::a00:27ff:fe12:3456  prefixlen 64  scopeid 0x20<link>\n        ether 08:00:27:12:34:56  txqueuelen 1000  (Ethernet)\n\nlo: flags=73<UP,LOOPBACK,RUNNING>  mtu 65536\n        inet 127.0.0.1  netmask 255.0.0.0",
+      "safety": "safe",
+      "troubleshooting": "If 'ifconfig' is not found, install it with 'sudo apt install net-tools' or use the newer 'ip addr' command instead.",
+      "legalNote": null
+    },
+    {
+      "command": "ip addr show",
+      "description": "The modern replacement for ifconfig. Shows all network interfaces with their IP addresses, MAC addresses, and status. This is the preferred command on newer Linux systems.",
+      "expectedOutput": "1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536\n    inet 127.0.0.1/8 scope host lo\n2: eth0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500\n    inet 10.0.2.15/24 brd 10.0.2.255 scope global dynamic eth0",
+      "safety": "safe",
+      "troubleshooting": "If no IP address appears under eth0, your network adapter might be down. Try 'sudo ip link set eth0 up' followed by 'sudo dhclient eth0'.",
+      "legalNote": null
+    },
+    {
+      "command": "ping -c 4 127.0.0.1",
+      "description": "Sends 4 ping packets to localhost (your own machine). The -c 4 flag limits it to 4 packets so it doesn't run forever. This tests that your network stack is working.",
+      "expectedOutput": "PING 127.0.0.1 (127.0.0.1) 56(84) bytes of data.\n64 bytes from 127.0.0.1: icmp_seq=1 ttl=64 time=0.023 ms\n64 bytes from 127.0.0.1: icmp_seq=2 ttl=64 time=0.031 ms\n64 bytes from 127.0.0.1: icmp_seq=3 ttl=64 time=0.028 ms\n64 bytes from 127.0.0.1: icmp_seq=4 ttl=64 time=0.029 ms\n\n--- 127.0.0.1 ping statistics ---\n4 packets transmitted, 4 received, 0% packet loss, time 3054ms",
+      "safety": "safe",
+      "troubleshooting": "If ping hangs without output, press Ctrl+C to stop it. If you forgot -c, ping runs forever until you press Ctrl+C.",
+      "legalNote": null
+    },
+    {
+      "command": "cat /etc/hostname",
+      "description": "Reads the hostname configuration file. This shows the name of your machine as stored in the system config. In security, knowing the hostname helps identify what system you're on.",
+      "expectedOutput": "kali",
+      "safety": "safe",
+      "troubleshooting": null,
+      "legalNote": null
+    },
+    {
+      "command": "id",
+      "description": "Shows your user ID (uid), group ID (gid), and all groups you belong to. This tells you your privilege level. 'uid=0' means root (full admin). Anything else means you're a regular user.",
+      "expectedOutput": "uid=1000(hackeryoung) gid=1000(hackeryoung) groups=1000(hackeryoung),24(cdrom),25(floppy),27(sudo),29(audio),30(dip),44(video),46(plugdev),100(users),107(netdev)",
+      "safety": "safe",
+      "troubleshooting": "If you're uid=0 (root), be very careful — root can delete anything, including the entire operating system. It's safer to use a regular user and 'sudo' when needed.",
+      "legalNote": null
+    }
+  ],
+  "challenge": {
+    "question": "You run 'ifconfig' and see two interfaces: 'eth0' with inet 10.0.2.15 and 'lo' with inet 127.0.0.1. What is 'lo' and why does it always have the address 127.0.0.1?",
+    "hint": "'lo' stands for loopback. Think about what 'looping back' means — where does the data go?",
+    "answer": "'lo' is the loopback interface — a virtual network interface that sends traffic back to your own machine. The address 127.0.0.1 (also called 'localhost') always refers to 'this computer.' It's used for testing and for programs on your machine to communicate with each other. Every computer has it, and it's always 127.0.0.1."
+  },
+  "realWorld": "In 2014, a Shellshock vulnerability was discovered in Bash, the same terminal shell you're using right now. The bug had existed undetected for 25 years and affected millions of Linux and Mac servers worldwide. Attackers could execute arbitrary commands by injecting code into environment variables. This is why understanding the terminal is so important — the very tool you use to defend systems can itself be a target.",
+  "funFact": "The Linux terminal you're using is based on technology from the 1970s. The original Unix terminals were physical typewriter-like machines called 'teletypes' (TTY). That's why Linux still calls terminal sessions 'tty' — you can see this by running the 'tty' command. You're using 50-year-old concepts with modern tools!"
+}

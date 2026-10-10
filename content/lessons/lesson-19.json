@@ -1,0 +1,84 @@
+{
+  "id": 19,
+  "slug": "sql-injection-explained",
+  "title": "SQL Injection Explained",
+  "module": 5,
+  "moduleName": "Web & App Security",
+  "difficulty": "Hacker",
+  "objective": "Understand what SQL injection is, how attackers exploit it, and how to prevent it using parameterized queries — all demonstrated on your own local SQLite database.",
+  "legalWarning": "Only test websites and applications you own or have explicit permission to test. Unauthorized access to web applications is illegal.",
+  "explanation": "SQL injection is arguably the most devastating web vulnerability ever discovered. It's been the #1 entry on the OWASP Top 10 for years, and it's responsible for some of the biggest data breaches in history. The concept is terrifyingly simple: if a web application builds SQL queries by concatenating user input, an attacker can modify the query by inserting their own SQL code.\n\nImagine a login form that checks your credentials with this query: SELECT * FROM users WHERE username = 'INPUT' AND password = 'INPUT'. If the application plugs your input directly into this query without sanitization, you could type ' OR '1'='1 as the password. The query becomes: SELECT * FROM users WHERE username = 'admin' AND password = '' OR '1'='1'. Since 1 always equals 1, this returns all users — and the application logs you in as the first user (usually admin).\n\nSQL injection can do much more than bypass logins. An attacker can extract entire databases using UNION SELECT attacks, modify or delete data with UPDATE and DELETE statements, and in some databases, even execute operating system commands. The 2017 Equifax breach? SQL injection. The 2011 Sony PlayStation hack? SQL injection. LinkedIn, Yahoo, TalkTalk — all SQL injection.\n\nIn this lesson, you'll create YOUR OWN SQLite database with dummy data and practice SQL injection against it. SQLite is a lightweight database that comes pre-installed on Kali — no server needed, just a file. You'll see how a vulnerable query works, break it with injection, and then fix it with parameterized queries.\n\nParameterized queries (also called prepared statements) are the gold standard defense. Instead of concatenating input into the query string, you use placeholders (?) and pass the values separately. The database engine treats them as data, never as code — making injection impossible. Every modern programming language supports them, and there's no excuse for not using them.",
+  "commands": [
+    {
+      "command": "sqlite3 ~/web-lab/testdb.sqlite << 'SQLEOF'\nCREATE TABLE IF NOT EXISTS users (\n  id INTEGER PRIMARY KEY,\n  username TEXT NOT NULL,\n  password TEXT NOT NULL,\n  email TEXT,\n  role TEXT DEFAULT 'user'\n);\nINSERT INTO users (username, password, email, role) VALUES ('admin', 'supersecret123', 'admin@hackerlab.local', 'admin');\nINSERT INTO users (username, password, email, role) VALUES ('hackeryoung', 'mypassword456', 'hackeryoung@hackerlab.local', 'user');\nINSERT INTO users (username, password, email, role) VALUES ('alice', 'alice_pass789', 'alice@hackerlab.local', 'user');\nSELECT '--- Database created with ' || COUNT(*) || ' users ---' FROM users;\nSQLEOF",
+      "description": "Creates a local SQLite database with a users table containing test accounts. This is YOUR database with fake data — no real credentials are involved.",
+      "expectedOutput": "--- Database created with 3 users ---",
+      "safety": "safe",
+      "troubleshooting": "If sqlite3 is not found, install it: 'sudo apt install sqlite3'. If the file already exists and you get UNIQUE constraint errors, delete it first: 'rm ~/web-lab/testdb.sqlite' and run again.",
+      "legalNote": null
+    },
+    {
+      "command": "sqlite3 ~/web-lab/testdb.sqlite \"SELECT * FROM users WHERE username = 'hackeryoung' AND password = 'mypassword456';\"",
+      "description": "A normal, legitimate login query. It returns your user record because both username and password match. This is how the query is supposed to work.",
+      "expectedOutput": "2|hackeryoung|mypassword456|hackeryoung@hackerlab.local|user",
+      "safety": "safe",
+      "troubleshooting": "If you get no output, the database might not have been created properly. Re-run the first command.",
+      "legalNote": null
+    },
+    {
+      "command": "sqlite3 ~/web-lab/testdb.sqlite \"SELECT * FROM users WHERE username = 'admin' AND password = '' OR '1'='1';\"",
+      "description": "THIS IS SQL INJECTION. The password field contains ' OR '1'='1 — which makes the WHERE clause always true. Instead of returning just the admin, it returns ALL users. An attacker would now be logged in as admin.",
+      "expectedOutput": "1|admin|supersecret123|admin@hackerlab.local|admin\n2|hackeryoung|mypassword456|hackeryoung@hackerlab.local|user\n3|alice|alice_pass789|alice@hackerlab.local|user",
+      "safety": "restricted",
+      "troubleshooting": "If you get a syntax error, make sure you're using single quotes correctly. The injection payload uses quotes to break out of the original query string.",
+      "legalNote": "This SQL injection is performed ONLY on your local test database with fake data. NEVER attempt SQL injection on real websites or databases — it is a serious crime under computer fraud laws."
+    },
+    {
+      "command": "sqlite3 ~/web-lab/testdb.sqlite \"SELECT * FROM users WHERE username = 'admin' AND password = 'wrong' UNION SELECT 1, sql, 'x', 'x', 'x' FROM sqlite_master;\"",
+      "description": "A UNION-based SQL injection that extracts the database schema. The UNION SELECT appends results from sqlite_master (which contains all table definitions) to the original query. Attackers use this to map out the entire database structure.",
+      "expectedOutput": "1|CREATE TABLE users (\n  id INTEGER PRIMARY KEY,\n  username TEXT NOT NULL,\n  password TEXT NOT NULL,\n  email TEXT,\n  role TEXT DEFAULT 'user'\n)|x|x|x",
+      "safety": "restricted",
+      "troubleshooting": "The number of columns in the UNION SELECT must match the original query. If you get 'SELECTs to the left and right of UNION do not have the same number of result columns,' count the columns in the users table and adjust.",
+      "legalNote": "Schema extraction via SQL injection is a serious attack. Only practice this on YOUR OWN local database. Using this technique on any database you do not own is illegal."
+    },
+    {
+      "command": "cat > ~/web-lab/sqli_vulnerable.py << 'PYEOF'\nimport sqlite3\nimport sys\n\n# VULNERABLE CODE - Never do this in real applications!\ndef vulnerable_login(username, password):\n    conn = sqlite3.connect('/root/web-lab/testdb.sqlite')\n    # BAD: String concatenation allows SQL injection\n    query = f\"SELECT * FROM users WHERE username = '{username}' AND password = '{password}'\"\n    print(f\"Query: {query}\")\n    result = conn.execute(query).fetchall()\n    conn.close()\n    return result\n\n# SAFE CODE - Use parameterized queries!\ndef safe_login(username, password):\n    conn = sqlite3.connect('/root/web-lab/testdb.sqlite')\n    # GOOD: Parameterized query - input is treated as data, never code\n    query = \"SELECT * FROM users WHERE username = ? AND password = ?\"\n    print(f\"Query: {query} with params ({username}, {password})\")\n    result = conn.execute(query, (username, password)).fetchall()\n    conn.close()\n    return result\n\nprint(\"=== VULNERABLE VERSION ===\")\nprint(vulnerable_login(\"admin\", \"' OR '1'='1\"))\nprint(\"\\n=== SAFE VERSION ===\")\nprint(safe_login(\"admin\", \"' OR '1'='1\"))\nPYEOF\necho 'Python demo script created.'",
+      "description": "Creates a Python script that shows both the VULNERABLE and SAFE ways to write a login query. The vulnerable version concatenates strings (allowing injection), while the safe version uses parameterized queries (blocking injection).",
+      "expectedOutput": "Python demo script created.",
+      "safety": "safe",
+      "troubleshooting": "If you see a 'no such file or directory' error for the database path, update the path in the script to match where your database actually is: ~/web-lab/testdb.sqlite.",
+      "legalNote": null
+    },
+    {
+      "command": "python3 ~/web-lab/sqli_vulnerable.py",
+      "description": "Runs the Python demo. You'll see the vulnerable version returns ALL users (injection succeeded), while the safe version returns nothing (injection blocked by parameterized query).",
+      "expectedOutput": "=== VULNERABLE VERSION ===\nQuery: SELECT * FROM users WHERE username = 'admin' AND password = '' OR '1'='1'\n[(1, 'admin', 'supersecret123', 'admin@hackerlab.local', 'admin'), (2, 'hackeryoung', 'mypassword456', 'hackeryoung@hackerlab.local', 'user'), (3, 'alice', 'alice_pass789', 'alice@hackerlab.local', 'user')]\n\n=== SAFE VERSION ===\nQuery: SELECT * FROM users WHERE username = ? AND password = ? with params (admin, ' OR '1'='1)\n[]",
+      "safety": "restricted",
+      "troubleshooting": "If Python can't find sqlite3, it should be built-in with Python 3. If you get a file path error, check 'ls ~/web-lab/testdb.sqlite' to make sure the database exists.",
+      "legalNote": "This script demonstrates SQL injection on your LOCAL test database only. The vulnerable pattern shown here must NEVER be used in production code."
+    },
+    {
+      "command": "sqlite3 ~/web-lab/testdb.sqlite \"SELECT * FROM users WHERE username = 'admin'; DROP TABLE users; --\"; sqlite3 ~/web-lab/testdb.sqlite \"SELECT COUNT(*) FROM users;\"",
+      "description": "Demonstrates the famous 'Bobby Tables' attack — injecting a DROP TABLE command. In SQLite command-line this runs as two statements. In real web apps with multi-statement execution enabled, this would delete the entire users table.",
+      "expectedOutput": "1|admin|supersecret123|admin@hackerlab.local|admin\n0",
+      "safety": "restricted",
+      "troubleshooting": "If the table was dropped, recreate the database by running the first command again. This is YOUR test database — that's why it's safe to experiment.",
+      "legalNote": "Destroying data via SQL injection (DROP TABLE, DELETE, UPDATE) is a federal crime when done on systems you do not own. Only practice on your local test database."
+    },
+    {
+      "command": "rm ~/web-lab/testdb.sqlite ~/web-lab/sqli_vulnerable.py 2>/dev/null; echo 'SQL injection lab cleaned up.'",
+      "description": "Removes the test database and demo script. Always clean up lab files when you're done.",
+      "expectedOutput": "SQL injection lab cleaned up.",
+      "safety": "safe",
+      "troubleshooting": null,
+      "legalNote": null
+    }
+  ],
+  "challenge": {
+    "question": "A website's URL looks like this: example.com/products?id=5. You suspect SQL injection. Without actually testing the site (it's not yours!), what would an attacker theoretically change in the URL to test for SQL injection?",
+    "hint": "Think about what happens if you add a single quote to the id parameter, or change it to a mathematical expression like 4+1.",
+    "answer": "An attacker would try example.com/products?id=5' (adding a single quote) to see if it causes a SQL error. They might also try id=4+1 — if the page still shows product 5, the database is evaluating the math, confirming injection. They could also try id=5 OR 1=1 to see if extra products appear. But remember: testing ANY site without written permission is ILLEGAL, even if you're just 'checking' for vulnerabilities."
+  },
+  "realWorld": "The 2011 Sony PlayStation Network hack used SQL injection to steal personal data from 77 million user accounts, including names, addresses, and credit card information. Sony had to shut down PSN for 23 days and estimated losses of $171 million. The attack could have been prevented with parameterized queries — a fix that takes minutes to implement.",
+  "funFact": "The 'Bobby Tables' joke from the webcomic XKCD has become legendary in programming. A mom calls a school to explain her son's name is 'Robert'); DROP TABLE Students;--' — and the school's database was wiped. The comic's alt text reads: 'I hope you've learned to sanitize your database inputs.' This comic is so famous that 'Bobby Tables' is now slang for SQL injection in the developer world."
+}

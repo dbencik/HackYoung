@@ -1,0 +1,60 @@
+{
+  "id": 2,
+  "slug": "famous-hackers-and-consequences",
+  "title": "Famous Hackers & Consequences",
+  "module": 1,
+  "moduleName": "The Hacker Mindset",
+  "difficulty": "Script Kiddie",
+  "objective": "Learn from real stories of hackers who became heroes or ended up in prison, and understand the real-world consequences of illegal hacking.",
+  "legalWarning": null,
+  "explanation": "The history of hacking is full of fascinating stories — some inspiring, some terrifying, and some that are both. Learning these stories helps you understand where the line is between genius and crime.\n\nKevin Mitnick was once the FBI's most wanted hacker. In the 1990s, he broke into dozens of major corporations including Nokia, Motorola, and Sun Microsystems. He didn't steal money — he was after the intellectual challenge and the source code. But that didn't matter to the law. He was arrested in 1995, spent 5 years in prison (including 8 months in solitary confinement), and was banned from using the internet for 3 years after his release. Here's the twist: after prison, Mitnick went white hat. He started his own cybersecurity consulting firm and became one of the most respected security experts in the world. He proved that the same skills that got him arrested could be used legally and lucratively.\n\nAnonymous, the decentralized hacktivist collective, launched attacks against governments, corporations, and organizations they saw as unjust. While some of their targets were controversial, many Anonymous members faced severe consequences. Hector Monsegur (known as 'Sabu'), a leader of the LulzSec spinoff group, was arrested in 2011 and became an FBI informant. He helped arrest several other members. Some received sentences of up to 10 years.\n\nGary McKinnon, a British hacker, broke into 97 US military and NASA computers in 2001-2002, searching for evidence of UFOs. He caused an estimated $700,000 in damage. The US tried to extradite him, and he faced up to 70 years in prison. Only after a 10-year legal battle did the UK block his extradition on human rights grounds.\n\nOn the hero side, Katie Moussouris helped create Microsoft's first bug bounty program and later worked with the US Department of Defense to launch 'Hack the Pentagon' — the first-ever federal bug bounty. She proved that inviting hackers to find vulnerabilities (legally) is far better than waiting for criminals to exploit them.\n\nThe lesson? The technical skills are the same. The difference between a hero and a criminal is permission, transparency, and staying within the law.",
+  "commands": [
+    {
+      "command": "date",
+      "description": "Shows the current date and time on your system. In digital forensics, timestamps are critical evidence — every action you take is logged with a timestamp.",
+      "expectedOutput": "Sat Oct 10 14:23:45 UTC 2026",
+      "safety": "safe",
+      "troubleshooting": "If the date is wildly wrong, your VM clock might be out of sync. Run 'sudo timedatectl set-ntp true' to fix it.",
+      "legalNote": null
+    },
+    {
+      "command": "history",
+      "description": "Shows a list of all commands you've previously typed. This is exactly what forensic investigators check when they seize a hacker's computer — your command history tells the whole story.",
+      "expectedOutput": "    1  whoami\n    2  hostname\n    3  uname -a\n    4  history",
+      "safety": "safe",
+      "troubleshooting": "If history shows nothing, you might be in a fresh shell session. That's normal for a new VM.",
+      "legalNote": null
+    },
+    {
+      "command": "last",
+      "description": "Shows a list of the last users who logged into the system and when. System administrators use this to detect unauthorized access.",
+      "expectedOutput": "hackeryoung  tty1         Sat Oct 10 14:00   still logged in\nreboot   system boot  6.6.9-amd64     Sat Oct 10 13:59",
+      "safety": "safe",
+      "troubleshooting": null,
+      "legalNote": null
+    },
+    {
+      "command": "cat /var/log/auth.log | tail -5",
+      "description": "Shows the last 5 lines of the authentication log. Every login attempt — successful or failed — is recorded here. This is one of the first files security analysts check during an investigation.",
+      "expectedOutput": "Oct 10 14:00:01 kali CRON[1234]: pam_unix(cron:session): session opened for user root\nOct 10 14:00:01 kali CRON[1234]: pam_unix(cron:session): session closed for user root",
+      "safety": "safe",
+      "troubleshooting": "If you get 'Permission denied', try 'sudo cat /var/log/auth.log | tail -5'. You need root access to read system logs.",
+      "legalNote": null
+    },
+    {
+      "command": "w",
+      "description": "Shows who is currently logged into the system and what they are doing. Think of it as a real-time surveillance tool for system administrators.",
+      "expectedOutput": " 14:23:45 up 24 min,  1 user,  load average: 0.08, 0.03, 0.01\nUSER     TTY      FROM             LOGIN@   IDLE   JCPU   PCPU WHAT\nhackeryoung tty1  -                14:00    0.00s  0.12s  0.01s w",
+      "safety": "safe",
+      "troubleshooting": null,
+      "legalNote": null
+    }
+  ],
+  "challenge": {
+    "question": "Kevin Mitnick was sentenced to 5 years in prison and then became a successful cybersecurity consultant. What was the KEY legal difference between his criminal hacking and his later consulting work?",
+    "hint": "Think about what changed — not his skills, but the relationship between him and the systems he tested.",
+    "answer": "The key difference was PERMISSION. As a criminal hacker, Mitnick accessed systems without authorization. As a consultant, companies hired him and gave explicit written permission to test their security. The skills were identical — only the legal authorization changed."
+  },
+  "realWorld": "In 2023, the SEC charged SolarWinds CISO Timothy Brown with fraud related to the massive 2020 SolarWinds supply chain attack. Hackers (believed to be Russian state-sponsored) compromised SolarWinds software updates, infiltrating 18,000 organizations including the US Treasury and Department of Homeland Security. The attack went undetected for months and showed how a single supply chain compromise can affect thousands of organizations.",
+  "funFact": "Kevin Mitnick once social-engineered his way into getting free bus rides as a teenager by buying the same hole punch used by LA bus drivers and finding blank transfer slips in a dumpster. He rode the entire LA bus system for free — his first 'hack' didn't involve a single computer."
+}

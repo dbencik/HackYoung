@@ -1,0 +1,68 @@
+{
+  "id": 23,
+  "slug": "social-engineering-phishing",
+  "title": "Social Engineering & Phishing",
+  "module": 6,
+  "moduleName": "Defense & Privacy",
+  "difficulty": "Hacker",
+  "objective": "Recognize social engineering tactics like phishing, pretexting, and baiting, learn how to spot fake emails and websites, and understand how to defend against and report these attacks.",
+  "legalWarning": null,
+  "explanation": "You can have the strongest passwords, the best firewall, and full disk encryption — and still get hacked. How? Because the weakest link in any security system isn't the technology. It's the human.\n\nSocial engineering is the art of manipulating people into giving up confidential information or taking actions that compromise security. It exploits human psychology — trust, fear, urgency, curiosity, and helpfulness — rather than technical vulnerabilities. And it works terrifyingly well.\n\nPhishing is the most common type. You receive an email that looks like it's from your bank, Google, or Netflix saying 'Your account has been compromised! Click here to verify your identity.' The link leads to a perfect copy of the real login page, but it's controlled by the attacker. You type your credentials, and they're sent straight to the criminal. Spear phishing targets specific individuals with personalized messages — 'Hi Sarah, here's the Q3 report you asked about' — making it much harder to spot.\n\nPretexting is creating a fake scenario to extract information. An attacker might call your company pretending to be from IT support: 'Hi, this is Mike from the help desk. We're migrating email servers and I need to verify your credentials.' Baiting leaves infected USB drives in parking lots — curious employees plug them in and malware installs automatically.\n\nHow to spot phishing: (1) Check the sender's actual email address, not just the display name — 'support@g00gle-security.com' is not Google. (2) Hover over links before clicking — does the URL actually go where it claims? (3) Look for urgency and threats — 'Your account will be suspended in 24 hours!' (4) Check for poor grammar and generic greetings. (5) Real companies never ask for passwords via email.\n\nDefense: Use email filtering, enable 2FA (so stolen passwords alone aren't enough), verify requests through a different channel (call the company directly using a number from their official website), and report phishing emails. Most email clients have a 'Report Phishing' button.\n\nIn this lesson, you'll analyze real phishing email headers and URLs to practice spotting fakes. All examples use clearly fake domains — you won't be visiting any real phishing sites.",
+  "commands": [
+    {
+      "command": "cat << 'EOF'\n=== PHISHING EMAIL ANALYSIS ===\n\nFrom: Amazon Security <security@amaz0n-verify.com>\nTo: hackeryoung@gmail.com\nSubject: URGENT: Your account has been locked!\nDate: Thu, 10 Oct 2026 08:15:33 +0000\n\nDear Valued Customer,\n\nWe have detected unusual activity on your Amazon account. Your account\nhas been temporarily locked for security reasons.\n\nPlease click the link below to verify your identity within 24 hours\nor your account will be permanently suspended:\n\nhttps://amazon-secure-verify.fake-domain.com/login\n\nThank you,\nAmazon Security Team\nEOF",
+      "description": "Displays a simulated phishing email. Can you spot all the red flags? Look at the sender domain, the urgency, the generic greeting, the suspicious URL, and the threat of account suspension.",
+      "expectedOutput": "(The phishing email is displayed)",
+      "safety": "safe",
+      "troubleshooting": null,
+      "legalNote": null
+    },
+    {
+      "command": "python3 -c \"\nprint('=== RED FLAG ANALYSIS ===')\nprint()\nflags = [\n    ('Sender domain', 'amaz0n-verify.com', 'Real Amazon uses @amazon.com — note the zero in amaz0n'),\n    ('Greeting', 'Dear Valued Customer', 'Amazon knows your name and uses it'),\n    ('Urgency', '24 hours or permanent suspension', 'Creates panic so you act without thinking'),\n    ('Link URL', 'amazon-secure-verify.fake-domain.com', 'Not amazon.com — the real domain is fake-domain.com'),\n    ('No personalization', 'No order #, no account details', 'Real Amazon references your specific account activity'),\n    ('Grammar', 'Mostly correct', 'Modern phishing uses AI to fix grammar — dont rely on this alone'),\n]\nfor name, evidence, explanation in flags:\n    print(f'RED FLAG: {name}')\n    print(f'  Evidence: {evidence}')\n    print(f'  Why: {explanation}')\n    print()\n\"",
+      "description": "Analyzes the phishing email point by point, explaining each red flag. This trains your eye to systematically check emails before clicking anything.",
+      "expectedOutput": "RED FLAG: Sender domain\n  Evidence: amaz0n-verify.com\n  Why: Real Amazon uses @amazon.com — note the zero in amaz0n\n...",
+      "safety": "safe",
+      "troubleshooting": null,
+      "legalNote": null
+    },
+    {
+      "command": "python3 -c \"\nurls = [\n    ('https://www.google.com/login', True, 'Legitimate Google domain'),\n    ('https://www.g00gle.com/login', False, 'Letter o replaced with zeros'),\n    ('https://login.microsoft.com/oauth', True, 'Legitimate Microsoft subdomain'),\n    ('https://microsoft.login-secure.com/oauth', False, 'microsoft is subdomain of login-secure.com, NOT microsoft.com'),\n    ('https://paypal.com.evil-site.org/verify', False, 'paypal.com is subdomain of evil-site.org'),\n    ('https://www.amazon.com/gp/css/account', True, 'Legitimate Amazon path'),\n]\nprint('=== URL ANALYSIS QUIZ ===')\nprint('Can you tell which URLs are legitimate and which are phishing?')\nprint()\nfor i, (url, legit, reason) in enumerate(urls, 1):\n    status = 'LEGIT' if legit else 'PHISHING'\n    print(f'{i}. {url}')\n    print(f'   -> {status}: {reason}')\n    print()\nprint('KEY RULE: The REAL domain is the last two parts before the first /')\nprint('paypal.com.evil-site.org -> real domain is evil-site.org, NOT paypal.com')\n\"",
+      "description": "Tests your ability to distinguish real URLs from phishing URLs. The critical skill: the actual domain is determined by the last two parts before the first slash. Everything before that is a subdomain that anyone can create.",
+      "expectedOutput": "=== URL ANALYSIS QUIZ ===\n...\nKEY RULE: The REAL domain is the last two parts before the first /\npaypal.com.evil-site.org -> real domain is evil-site.org, NOT paypal.com",
+      "safety": "safe",
+      "troubleshooting": null,
+      "legalNote": null
+    },
+    {
+      "command": "cat << 'EOF'\n=== PRETEXTING SCENARIOS ===\n\nScenario 1 — IT Support Call:\n\"Hi, this is Jake from IT. We're doing an emergency password reset\ndue to a security breach. I need your current password to migrate\nyour account to the new system.\"\nDEFENSE: IT will NEVER ask for your password. Hang up and call IT\ndirectly using the number from your company's internal directory.\n\nScenario 2 — CEO Fraud (Business Email Compromise):\n\"This is urgent. I need you to wire $50,000 to this account for a\nconfidential acquisition. Don't tell anyone — it's sensitive.\nPlease process immediately.\" — Sent from ceo@company.com (spoofed)\nDEFENSE: Verify any financial request by calling the person directly.\nEmail addresses can be spoofed. The urgency + secrecy is a red flag.\n\nScenario 3 — USB Baiting:\nYou find a USB drive labeled \"Employee Salaries Q3\" in the parking lot.\nDEFENSE: NEVER plug in unknown USB drives. They can contain malware\nthat executes automatically. Turn it in to your IT security team.\nEOF",
+      "description": "Presents three common social engineering scenarios beyond email phishing: pretexting phone calls, CEO fraud, and USB baiting. Each includes the defense strategy.",
+      "expectedOutput": "(Three pretexting scenarios with defenses are displayed)",
+      "safety": "safe",
+      "troubleshooting": null,
+      "legalNote": null
+    },
+    {
+      "command": "curl -s -I https://www.google.com 2>/dev/null | grep -i 'strict-transport-security\\|content-security-policy\\|x-frame-options\\|x-content-type-options'",
+      "description": "Checks Google's security headers. These headers help prevent phishing-related attacks: Strict-Transport-Security forces HTTPS, X-Frame-Options prevents clickjacking (embedding the site in a fake frame), and Content-Security-Policy controls what resources can load.",
+      "expectedOutput": "strict-transport-security: max-age=31536000\nx-frame-options: SAMEORIGIN\nx-content-type-options: nosniff",
+      "safety": "safe",
+      "troubleshooting": "If you get no output, the headers might have different capitalization. Remove the grep and view all headers: 'curl -s -I https://www.google.com'.",
+      "legalNote": null
+    },
+    {
+      "command": "python3 -c \"\nprint('=== PHISHING DEFENSE CHECKLIST ===')\nprint()\nchecks = [\n    'Check sender email address (not display name) — look for typos and wrong domains',\n    'Hover over links before clicking — does the URL match the claimed sender?',\n    'Look for urgency, threats, and emotional manipulation',\n    'Verify requests through a separate channel (call, text, in-person)',\n    'Enable 2FA on all important accounts (email, bank, social media)',\n    'Use a password manager — it will NOT autofill on fake sites',\n    'Report phishing: forward to reportphishing@apwg.org or phishing@irs.gov',\n    'Keep software updated — patches fix vulnerabilities phishing exploits',\n    'Trust your instinct — if something feels off, it probably is',\n]\nfor i, check in enumerate(checks, 1):\n    print(f'  [{i}] {check}')\nprint()\nprint('REMEMBER: Password managers are a hidden anti-phishing tool!')\nprint('They fill credentials based on the ACTUAL domain, not what the page looks like.')\nprint('If your password manager does not offer to fill your login, the site is fake.')\n\"",
+      "description": "Displays a comprehensive anti-phishing defense checklist. The password manager tip is especially important — it acts as a phishing detector because it matches credentials to actual domains, not visual appearance.",
+      "expectedOutput": "=== PHISHING DEFENSE CHECKLIST ===\n  [1] Check sender email address...\n  ...\nREMEMBER: Password managers are a hidden anti-phishing tool!",
+      "safety": "safe",
+      "troubleshooting": null,
+      "legalNote": null
+    }
+  ],
+  "challenge": {
+    "question": "You receive an email from 'security@paypa1.com' (note: the letter L is replaced with the number 1) saying someone tried to access your PayPal account from Russia. It asks you to 'click here to secure your account.' The email looks perfect — correct logo, proper formatting, no grammar errors. What do you do?",
+    "hint": "Don't just look at one indicator. Even if the email looks perfect, what's wrong with the sender domain? And what should you do instead of clicking the link?",
+    "answer": "Do NOT click the link. The sender domain 'paypa1.com' (with a number 1) is NOT the real 'paypal.com' (with a letter L). Even though the email looks perfect (modern phishing is very sophisticated), the domain is fake. Instead: (1) Open a new browser tab and type paypal.com manually. (2) Log in directly and check your account activity. (3) Forward the phishing email to spoof@paypal.com. (4) Report it in your email client using the 'Report Phishing' button. (5) If you already clicked and entered credentials, immediately change your PayPal password and enable 2FA."
+  },
+  "realWorld": "In 2020, Twitter suffered a massive breach when attackers used phone-based social engineering (vishing) to manipulate Twitter employees into providing access to internal tools. The attackers called employees pretending to be from Twitter's IT department. Once inside, they hijacked accounts of Barack Obama, Elon Musk, Bill Gates, and Apple, posting Bitcoin scam tweets that collected over $120,000 in minutes. A 17-year-old was later arrested as the mastermind.",
+  "funFact": "According to Verizon's 2024 Data Breach Investigations Report, 68% of all data breaches involve a human element — social engineering, phishing, or human error. The average cost of a phishing attack on a mid-size company is $1.6 million. And despite decades of security training, about 3.4% of people still click on phishing links every time — which is more than enough for attackers when they send millions of emails."
+}

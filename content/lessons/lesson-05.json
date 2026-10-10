@@ -1,0 +1,68 @@
+{
+  "id": 5,
+  "slug": "ip-addresses-and-subnets",
+  "title": "IP Addresses & Subnets",
+  "module": 2,
+  "moduleName": "Network Fundamentals",
+  "difficulty": "Script Kiddie",
+  "objective": "Understand how IP addresses and subnets work, and map out your own home network topology.",
+  "legalWarning": "The network scanning commands in this lesson must ONLY be used on networks you own. Scanning someone else's network — even your school's or a coffee shop's WiFi — is illegal in most countries and can result in criminal charges.",
+  "explanation": "Every device on the internet has an IP address — think of it as a phone number for computers. Without it, data wouldn't know where to go. IPv4 addresses look like four numbers separated by dots: 192.168.1.42. Each number ranges from 0 to 255, giving us about 4.3 billion possible addresses (which we've actually run out of, but that's another story).\n\nNot all IP addresses are created equal. Some are 'private' — they only work inside your local network and can't be reached from the internet. The three private ranges are: 10.0.0.0 to 10.255.255.255 (used by large organizations), 172.16.0.0 to 172.31.255.255 (medium networks), and 192.168.0.0 to 192.168.255.255 (home networks — this is probably what your router uses). Your router has TWO IP addresses: a private one facing your home network (like 192.168.1.1) and a public one facing the internet (assigned by your ISP).\n\nSubnet masks determine which part of an IP address identifies the network and which part identifies individual devices. A common home subnet mask is 255.255.255.0 (or /24 in shorthand). This means the first three numbers (like 192.168.1) identify the network, and the last number (1-254) identifies individual devices. With a /24 subnet, you can have up to 254 devices on one network segment.\n\nWhy does this matter for hacking? Because the first step of any penetration test is reconnaissance — mapping out the target network. You need to understand what subnet you're on, how many devices are there, and what the network topology looks like. On YOUR OWN network, this is how you'd do it. You check your IP and subnet mask, calculate the network range, and then scan it to see what's connected. Maybe you'll find devices you didn't even know were on your network — a forgotten smart plug, your neighbor accidentally connected to your WiFi, or an old phone still syncing data.",
+  "commands": [
+    {
+      "command": "ip addr show eth0",
+      "description": "Shows the IP address and subnet mask for your eth0 interface. Look for the 'inet' line — the number after the / is your subnet prefix length (e.g., /24 = 255.255.255.0).",
+      "expectedOutput": "2: eth0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500\n    link/ether 08:00:27:12:34:56 brd ff:ff:ff:ff:ff:ff\n    inet 192.168.1.100/24 brd 192.168.1.255 scope global dynamic eth0",
+      "safety": "safe",
+      "troubleshooting": "If eth0 doesn't exist, your interface might have a different name. Run 'ip link show' to see all interface names. On newer systems, names like 'enp0s3' are common.",
+      "legalNote": null
+    },
+    {
+      "command": "ip route show",
+      "description": "Shows your routing table — how your computer knows where to send network traffic. The 'default via' line shows your gateway (usually your router's IP address).",
+      "expectedOutput": "default via 192.168.1.1 dev eth0 proto dhcp metric 100\n192.168.1.0/24 dev eth0 proto kernel scope link src 192.168.1.100 metric 100",
+      "safety": "safe",
+      "troubleshooting": "If you see no default route, your network isn't configured properly. Try 'sudo dhclient eth0' to get an IP address from your router.",
+      "legalNote": null
+    },
+    {
+      "command": "ping -c 3 192.168.1.1",
+      "description": "Pings your default gateway (router) to confirm you can reach it. If this fails, you have a connectivity problem on your local network.",
+      "expectedOutput": "PING 192.168.1.1 (192.168.1.1) 56(84) bytes of data.\n64 bytes from 192.168.1.1: icmp_seq=1 ttl=64 time=1.23 ms\n64 bytes from 192.168.1.1: icmp_seq=2 ttl=64 time=0.98 ms\n64 bytes from 192.168.1.1: icmp_seq=3 ttl=64 time=1.05 ms",
+      "safety": "safe",
+      "troubleshooting": "If you get 'Destination Host Unreachable', check that your network cable is plugged in (or WiFi is connected) and that your IP is in the same subnet as the gateway.",
+      "legalNote": null
+    },
+    {
+      "command": "ipcalc 192.168.1.100/24",
+      "description": "Calculates subnet information from an IP and prefix. Shows the network address, broadcast address, number of usable hosts, and the address range.",
+      "expectedOutput": "Address:   192.168.1.100\nNetmask:   255.255.255.0 = 24\nWildcard:  0.0.0.255\nNetwork:   192.168.1.0/24\nHostMin:   192.168.1.1\nHostMax:   192.168.1.254\nBroadcast: 192.168.1.255\nHosts/Net: 254",
+      "safety": "safe",
+      "troubleshooting": "If 'ipcalc' is not found, install it with 'sudo apt install ipcalc'. This is a calculation tool only — it doesn't send any network traffic.",
+      "legalNote": null
+    },
+    {
+      "command": "arp -a",
+      "description": "Shows the ARP table — a list of devices your computer has recently communicated with on the local network, along with their MAC addresses. This is a passive way to see nearby devices.",
+      "expectedOutput": "? (192.168.1.1) at aa:bb:cc:dd:ee:ff [ether] on eth0\n? (192.168.1.50) at 11:22:33:44:55:66 [ether] on eth0",
+      "safety": "safe",
+      "troubleshooting": "If the ARP table is empty, it means you haven't communicated with any other devices yet. Try pinging your gateway first, then run arp -a again.",
+      "legalNote": null
+    },
+    {
+      "command": "nmap -sn 192.168.1.0/24",
+      "description": "Performs a ping sweep on your local subnet — discovers all devices that respond to ping on your network. This is the most basic network scan and the foundation of reconnaissance.",
+      "expectedOutput": "Starting Nmap 7.94 ( https://nmap.org )\nNmap scan report for 192.168.1.1\nHost is up (0.0010s latency).\nNmap scan report for 192.168.1.50\nHost is up (0.0034s latency).\nNmap scan report for 192.168.1.100\nHost is up (0.00012s latency).\nNmap done: 256 IP addresses (3 hosts up) scanned in 2.45 seconds",
+      "safety": "restricted",
+      "troubleshooting": "If nmap says 'Permission denied', try running with 'sudo'. If it finds 0 hosts, your VM might be on an isolated network. Switch to Bridged or NAT mode temporarily.",
+      "legalNote": "ONLY scan networks you own. Running nmap on a network without authorization is illegal. In your home, the 192.168.x.x network behind your router is yours to scan. Your school network, workplace network, or public WiFi are NOT yours."
+    }
+  ],
+  "challenge": {
+    "question": "Your computer has IP 192.168.1.100 with subnet mask 255.255.255.0. Your friend's computer is at 192.168.2.50 with the same subnet mask. Can they communicate directly without a router? Why or why not?",
+    "hint": "Look at the network portion of each IP address. With a /24 mask, the first three octets define the network.",
+    "answer": "No, they cannot communicate directly. With a 255.255.255.0 (/24) subnet mask, your computer is on network 192.168.1.0 and your friend's is on network 192.168.2.0. They are on different subnets. A router is needed to forward traffic between different networks. Without a router, the packets have nowhere to go."
+  },
+  "realWorld": "In 2016, the Mirai botnet scanned the entire internet for devices with default passwords (like IP cameras and routers) and infected over 600,000 IoT devices. It then used those devices to launch a massive DDoS attack against DNS provider Dyn, taking down Twitter, Netflix, Reddit, and dozens of other major websites for hours. The botnet worked by doing exactly what you just learned — scanning IP ranges and checking each device. The difference? Mirai scanned networks it didn't own, which made it a criminal operation.",
+  "funFact": "There are exactly 4,294,967,296 possible IPv4 addresses (2^32). That sounds like a lot, but Earth has 8 billion people — not enough addresses for even one per person! That's why IPv6 was created, with 340 undecillion addresses (that's 340 followed by 36 zeros). With IPv6, you could assign an IP address to every grain of sand on Earth and still have addresses left over."
+}

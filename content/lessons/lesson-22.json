@@ -1,0 +1,84 @@
+{
+  "id": 22,
+  "slug": "vpn-and-encryption",
+  "title": "VPN & Encryption",
+  "module": 6,
+  "moduleName": "Defense & Privacy",
+  "difficulty": "Hacker",
+  "objective": "Understand symmetric vs asymmetric encryption, how TLS/SSL secures web traffic, how VPNs work, why public WiFi is dangerous, and how to use GPG for encrypting files.",
+  "legalWarning": null,
+  "explanation": "Encryption is the backbone of digital security. Every time you see that little padlock in your browser, every time you send a WhatsApp message, every time you use your bank's app — encryption is protecting your data. Without it, anyone between you and the server could read everything.\n\nThere are two main types. Symmetric encryption uses the same key to encrypt and decrypt — like a lockbox where both people have copies of the same key. It's fast but has a problem: how do you securely share the key in the first place? AES (Advanced Encryption Standard) is the most common symmetric algorithm, used by governments and militaries worldwide.\n\nAsymmetric encryption solves the key-sharing problem using key pairs: a public key (shared with everyone) and a private key (kept secret). Anyone can encrypt data with your public key, but only you can decrypt it with your private key. RSA and ECC are common asymmetric algorithms. The downside? It's much slower than symmetric encryption.\n\nTLS (Transport Layer Security, successor to SSL) combines both. When you connect to a website over HTTPS, your browser and the server use asymmetric encryption to securely exchange a symmetric session key, then switch to faster symmetric encryption for the actual data transfer. This is called a TLS handshake.\n\nA VPN (Virtual Private Network) creates an encrypted tunnel between your device and a VPN server. All your internet traffic goes through this tunnel, so anyone on your local network (like a coffee shop WiFi) can only see encrypted gibberish. The VPN server then sends your requests to the actual websites. This hides your activity from local eavesdroppers and your IP address from websites.\n\nPublic WiFi is particularly dangerous because attackers on the same network can perform man-in-the-middle (MITM) attacks — intercepting your traffic and even injecting malicious content. A VPN defeats this. In this lesson, you'll use GPG (GNU Privacy Guard) to encrypt and decrypt files on YOUR OWN machine, and you'll examine TLS certificates to understand what the browser checks behind the scenes.",
+  "commands": [
+    {
+      "command": "echo 'TOP SECRET: The answer to life is 42' > ~/web-lab/secret.txt && cat ~/web-lab/secret.txt",
+      "description": "Creates a test file with 'secret' information. You'll encrypt this file to see how encryption transforms readable text into unreadable ciphertext.",
+      "expectedOutput": "TOP SECRET: The answer to life is 42",
+      "safety": "active",
+      "troubleshooting": "Make sure ~/web-lab/ exists: 'mkdir -p ~/web-lab'.",
+      "legalNote": null
+    },
+    {
+      "command": "gpg --batch --yes --symmetric --cipher-algo AES256 --passphrase 'hackeryoung2026' ~/web-lab/secret.txt && echo 'File encrypted!' && ls -la ~/web-lab/secret.txt*",
+      "description": "Encrypts the file using GPG with AES-256 symmetric encryption. The passphrase is the key — anyone with it can decrypt the file. AES-256 is the same algorithm used by the US government for TOP SECRET documents.",
+      "expectedOutput": "File encrypted!\n-rw-r--r-- 1 hackeryoung hackeryoung   37 Oct 10 12:00 /home/hackeryoung/web-lab/secret.txt\n-rw-r--r-- 1 hackeryoung hackeryoung   88 Oct 10 12:00 /home/hackeryoung/web-lab/secret.txt.gpg",
+      "safety": "active",
+      "troubleshooting": "If gpg asks for a passphrase interactively, you may need to add '--pinentry-mode loopback' to the command. If gpg is not installed: 'sudo apt install gnupg'.",
+      "legalNote": null
+    },
+    {
+      "command": "xxd ~/web-lab/secret.txt.gpg | head -10",
+      "description": "Shows the raw bytes of the encrypted file in hex. Notice it looks like complete random noise — that's the point. There's no trace of the original message, and without the passphrase, it's computationally impossible to recover.",
+      "expectedOutput": "00000000: 8c0d 0409 0302 ... (random hex bytes)\n00000010: a4b7 c8e2 f301 ...",
+      "safety": "active",
+      "troubleshooting": "If xxd is not found, use 'hexdump -C' instead.",
+      "legalNote": null
+    },
+    {
+      "command": "gpg --batch --yes --decrypt --passphrase 'hackeryoung2026' ~/web-lab/secret.txt.gpg 2>/dev/null",
+      "description": "Decrypts the file using the same passphrase. This is symmetric encryption in action — the same key encrypts and decrypts. If you use the wrong passphrase, decryption fails completely.",
+      "expectedOutput": "TOP SECRET: The answer to life is 42",
+      "safety": "active",
+      "troubleshooting": "If decryption fails with 'bad session key,' you typed the wrong passphrase. The correct one is 'hackeryoung2026'.",
+      "legalNote": null
+    },
+    {
+      "command": "gpg --batch --yes --decrypt --passphrase 'wrongpassword' ~/web-lab/secret.txt.gpg 2>&1 || echo 'Decryption FAILED — wrong key! This is why encryption works.'",
+      "description": "Tries to decrypt with the WRONG passphrase. It fails completely — you don't get partial data or hints about the real content. This demonstrates that encryption is all-or-nothing.",
+      "expectedOutput": "gpg: decryption failed: Bad session key\nDecryption FAILED — wrong key! This is why encryption works.",
+      "safety": "active",
+      "troubleshooting": null,
+      "legalNote": null
+    },
+    {
+      "command": "echo | openssl s_client -connect google.com:443 -servername google.com 2>/dev/null | openssl x509 -noout -subject -issuer -dates",
+      "description": "Examines the TLS certificate of google.com. You'll see who issued it (Certificate Authority), who it's issued to, and when it expires. This is what your browser checks to verify a website's identity.",
+      "expectedOutput": "subject=CN = *.google.com\nissuer=C = US, O = Google Trust Services LLC, CN = GTS CA 1C3\nnotBefore=Sep 15 08:00:00 2026 GMT\nnotAfter=Dec  8 08:00:00 2026 GMT",
+      "safety": "active",
+      "troubleshooting": "If you get a connection timeout, check your internet connection. If openssl is not found: 'sudo apt install openssl'. You can try other domains like github.com or cloudflare.com.",
+      "legalNote": null
+    },
+    {
+      "command": "python3 -c \"\nprint('=== ENCRYPTION COMPARISON ===')\nprint()\nprint('Symmetric (AES):  Same key encrypts and decrypts')\nprint('  + Very fast (gigabytes/sec)')\nprint('  - Key must be shared securely')\nprint('  Example: AES-256, ChaCha20')\nprint()\nprint('Asymmetric (RSA): Public key encrypts, private key decrypts')\nprint('  + No need to share secret keys')\nprint('  - Much slower (100-1000x)')\nprint('  Example: RSA-4096, Ed25519')\nprint()\nprint('TLS/HTTPS: Uses BOTH!')\nprint('  1. Asymmetric to exchange a session key (handshake)')\nprint('  2. Symmetric for actual data transfer (speed)')\nprint()\nprint('VPN: Encrypted tunnel using TLS or WireGuard')\nprint('  - All traffic appears encrypted to local network')\nprint('  - Your IP is hidden from destination websites')\nprint('  - Essential on public WiFi!')\n\"",
+      "description": "Displays a summary comparing symmetric and asymmetric encryption, explaining how TLS combines both, and how VPNs use encryption to protect your traffic.",
+      "expectedOutput": "=== ENCRYPTION COMPARISON ===\n\nSymmetric (AES):  Same key encrypts and decrypts\n  + Very fast (gigabytes/sec)\n  - Key must be shared securely\n  Example: AES-256, ChaCha20\n\nAsymmetric (RSA): Public key encrypts, private key decrypts\n  + No need to share secret keys\n  - Much slower (100-1000x)\n  Example: RSA-4096, Ed25519\n\nTLS/HTTPS: Uses BOTH!\n  1. Asymmetric to exchange a session key (handshake)\n  2. Symmetric for actual data transfer (speed)\n\nVPN: Encrypted tunnel using TLS or WireGuard\n  - All traffic appears encrypted to local network\n  - Your IP is hidden from destination websites\n  - Essential on public WiFi!",
+      "safety": "active",
+      "troubleshooting": null,
+      "legalNote": null
+    },
+    {
+      "command": "rm ~/web-lab/secret.txt ~/web-lab/secret.txt.gpg 2>/dev/null; echo 'Encryption lab cleaned up.'",
+      "description": "Removes the test files. In real life, you'd want to securely delete sensitive files using 'shred' instead of 'rm', since rm only removes the directory entry — the data might still be recoverable from disk.",
+      "expectedOutput": "Encryption lab cleaned up.",
+      "safety": "active",
+      "troubleshooting": null,
+      "legalNote": null
+    }
+  ],
+  "challenge": {
+    "question": "You're at a coffee shop using their free WiFi. You need to log into your bank account. What three things should you check or do before entering your credentials?",
+    "hint": "Think about what protects your traffic from other people on the same WiFi network, how you verify you're on the real bank website, and what adds an extra layer of security to your connection.",
+    "answer": "(1) Connect to a VPN first — this encrypts all your traffic so other people on the coffee shop WiFi can't intercept it. (2) Verify the bank's website shows HTTPS with a valid certificate (padlock icon) — click the padlock to check the certificate is issued to your actual bank, not a phishing site. (3) Use a VPN or wait until you're on a trusted network — even with HTTPS, a sophisticated attacker on the same WiFi could attempt SSL stripping or DNS spoofing to redirect you to a fake login page. Bonus: Enable 2FA on your bank account so even a stolen password isn't enough."
+  },
+  "realWorld": "In 2015, researchers demonstrated the 'Dark Hotel' attack campaign targeting business travelers. Attackers compromised hotel WiFi networks to perform man-in-the-middle attacks on executives, installing malware through fake software updates that appeared legitimate. Victims included CEOs, senior VPs, and directors of major companies. Using a VPN would have prevented these attacks by encrypting all traffic through the compromised network.",
+  "funFact": "The RSA encryption algorithm is based on the mathematical fact that multiplying two large prime numbers is easy, but figuring out which two primes were multiplied to produce a large number is extremely hard. The largest RSA number ever factored (RSA-250, 829 digits) took 2,700 CPU-years of computation. Your browser does RSA calculations in milliseconds because it uses 'small' numbers — only 2048 or 4096 bits."
+}

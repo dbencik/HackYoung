@@ -1,0 +1,52 @@
+{
+  "id": 1,
+  "slug": "what-is-hacking",
+  "title": "What is Hacking?",
+  "module": 1,
+  "moduleName": "The Hacker Mindset",
+  "difficulty": "Script Kiddie",
+  "objective": "Understand the difference between ethical and malicious hacking, and why unauthorized hacking is a serious crime.",
+  "legalWarning": null,
+  "explanation": "When most people hear the word 'hacking,' they picture someone in a dark hoodie breaking into government systems. But hacking is actually much broader than that. At its core, hacking means finding creative ways to make technology do things it wasn't originally designed to do. That can be a totally good thing!\n\nThere are three main types of hackers, often described by hat colors. White hat hackers are the good guys — they're hired by companies to find security holes before criminals do. They follow strict rules, get written permission, and report everything they find. Gray hat hackers find vulnerabilities without permission but don't exploit them maliciously — they might notify the company or even publish the flaw publicly. This is still illegal in most countries, even if your intentions are good. Black hat hackers are the criminals — they break into systems to steal data, money, or cause damage.\n\nHere's the most important thing you'll learn in this entire course: hacking into any system without explicit written permission is a CRIME. In the US, the Computer Fraud and Abuse Act (CFAA) can send you to prison for up to 20 years. In the EU, the Convention on Cybercrime carries similar penalties. Even scanning someone else's network without permission can land you in serious legal trouble.\n\nSo how do ethical hackers stay legal? They work under contracts called 'scope agreements' that spell out exactly what they're allowed to test. They use isolated lab environments (which we'll build in Lesson 3). They never touch systems they don't own or have written authorization to test.\n\nIn this course, you'll learn real hacking techniques — but you'll ONLY use them in your own lab. Think of it like learning martial arts: you practice in the dojo, not on random people on the street. By the end, you'll have skills that companies will actually pay you for. Ethical hackers (also called penetration testers) earn between $80,000 and $160,000 per year. Not bad for a career that started as curiosity!",
+  "commands": [
+    {
+      "command": "whoami",
+      "description": "Shows your current username on the system. This is the most basic command — every hacker's first move is to figure out who they are on a system.",
+      "expectedOutput": "hackeryoung",
+      "safety": "safe",
+      "troubleshooting": null,
+      "legalNote": null
+    },
+    {
+      "command": "hostname",
+      "description": "Displays the name of the computer you're logged into. Useful for confirming you're on your own machine and not accidentally connected to something else.",
+      "expectedOutput": "kali",
+      "safety": "safe",
+      "troubleshooting": "If you see a hostname you don't recognize, disconnect immediately — you may be on the wrong machine.",
+      "legalNote": null
+    },
+    {
+      "command": "uname -a",
+      "description": "Shows detailed information about your operating system, including the kernel version, architecture, and build date.",
+      "expectedOutput": "Linux kali 6.6.9-amd64 #1 SMP PREEMPT_DYNAMIC Kali 6.6.9-1kali1 (2024-01-08) x86_64 GNU/Linux",
+      "safety": "safe",
+      "troubleshooting": "If this doesn't say 'Linux' and 'kali', you might not be in your Kali VM. Make sure you opened the terminal inside VirtualBox.",
+      "legalNote": null
+    },
+    {
+      "command": "echo \"I will only hack systems I own or have permission to test.\"",
+      "description": "Prints the ethical hacker's pledge to your terminal. Not a real security command, but a reminder of the golden rule.",
+      "expectedOutput": "I will only hack systems I own or have permission to test.",
+      "safety": "safe",
+      "troubleshooting": null,
+      "legalNote": null
+    }
+  ],
+  "challenge": {
+    "question": "A friend gives you a WiFi password and says 'try to hack into their router admin panel.' You have the WiFi password but NO written permission to test the router. Is this legal?",
+    "hint": "Think about what 'explicit written permission' means. A verbal suggestion from a friend is not the same as a signed authorization.",
+    "answer": "No, this is NOT legal. Having a WiFi password only gives you permission to use the internet connection, not to probe or attack the router. You need explicit written permission from the network owner specifically authorizing security testing."
+  },
+  "realWorld": "In 2022, former Uber chief security officer Joe Sullivan was convicted of federal charges for covering up a 2016 data breach that exposed 57 million users. He faced up to 8 years in prison. This shows that even people INSIDE tech companies face serious consequences when they don't handle security ethically and transparently.",
+  "funFact": "The term 'hacker' originally had nothing to do with computers. It started at MIT in the 1960s, where students called clever engineering tricks 'hacks.' One famous hack involved placing a full-size replica of a campus police car on top of MIT's Great Dome building — overnight."
+}

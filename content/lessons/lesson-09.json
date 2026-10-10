@@ -1,0 +1,68 @@
+{
+  "id": 9,
+  "slug": "nmap-scanning-your-network",
+  "title": "nmap — Scanning Your Network",
+  "module": 3,
+  "moduleName": "Scanning & Reconnaissance",
+  "difficulty": "Apprentice",
+  "objective": "Learn how to use nmap to discover devices on your own home network and understand what open, closed, and filtered ports mean.",
+  "legalWarning": "Only scan networks and devices you own. Scanning others' networks without permission is illegal under the Computer Fraud and Abuse Act (US), Computer Misuse Act (UK), and similar laws worldwide. Penalties include fines and prison.",
+  "explanation": "Imagine you just moved into a new house and you want to know what's inside every room. That's basically what nmap (Network Mapper) does — it looks around your network and tells you what devices are connected and what 'doors' (ports) are open on each one.\n\nnmap is the single most important tool in any ethical hacker's toolkit. It was created in 1997 by Gordon Lyon (aka Fyodor) and has been used in countless security audits since. You've probably even seen it in movies — it appeared in The Matrix Reloaded, Die Hard 4, and Mr. Robot.\n\nWhen you scan your home network (typically 192.168.1.0/24 or 192.168.0.0/24), nmap sends tiny packets to every possible address in that range and listens for responses. The '/24' means 'check all 256 addresses in this subnet' — from .0 to .255.\n\nFor each device it finds, nmap checks common ports (think of ports as numbered doors on a building). Each port runs a specific service: port 80 is HTTP (websites), port 22 is SSH (remote access), port 443 is HTTPS (secure websites), and so on. There are 65,535 possible ports on every device.\n\nnmap reports each port in one of three states:\n- **Open**: The port is accepting connections. A service is running and listening. This is what hackers look for.\n- **Closed**: The port is accessible but no service is listening. The door exists, but nobody's home.\n- **Filtered**: nmap can't tell if the port is open or closed because a firewall is blocking the probe. The door has a bouncer who won't let you peek inside.\n\nA basic scan of your home network will probably reveal your router, phones, smart TVs, gaming consoles, and maybe some IoT devices you forgot about. Many people are shocked to discover how many devices are actually on their network. This is why scanning your own network is a great first step in securing your home — you can't protect what you don't know about.",
+  "commands": [
+    {
+      "command": "sudo nmap 192.168.1.0/24",
+      "description": "Scan all 256 IP addresses on your home network subnet. This performs a basic host discovery and port scan. You need sudo for some scan types.",
+      "expectedOutput": "Starting Nmap 7.94 ( https://nmap.org )\nNmap scan report for 192.168.1.1\nHost is up (0.0034s latency).\nNot shown: 995 closed ports\nPORT    STATE SERVICE\n22/tcp  open  ssh\n53/tcp  open  domain\n80/tcp  open  http\n443/tcp open  https\n\nNmap scan report for 192.168.1.105\nHost is up (0.012s latency).\nNot shown: 999 closed ports\nPORT   STATE SERVICE\n22/tcp open  ssh\n\nNmap done: 256 IP addresses (4 hosts up) scanned in 12.34 seconds",
+      "safety": "restricted",
+      "troubleshooting": "If the scan seems slow or returns no results, your subnet might be different. Run 'ip a' or 'ifconfig' first to check your actual IP range. If you're on 192.168.0.x, scan 192.168.0.0/24 instead.",
+      "legalNote": "Only run this on YOUR home network. Scanning other networks is illegal."
+    },
+    {
+      "command": "nmap 192.168.1.1",
+      "description": "Scan a single device — typically your router at 192.168.1.1. This is faster than scanning the whole subnet and gives you detailed port info for one target.",
+      "expectedOutput": "Starting Nmap 7.94 ( https://nmap.org )\nNmap scan report for 192.168.1.1\nHost is up (0.0021s latency).\nNot shown: 996 closed tcp ports (conn-refused)\nPORT    STATE    SERVICE\n22/tcp  open     ssh\n53/tcp  open     domain\n80/tcp  open     http\n443/tcp open     https\n8080/tcp filtered http-proxy\n\nNmap done: 1 IP address (1 host up) scanned in 1.83 seconds",
+      "safety": "restricted",
+      "troubleshooting": "If you get 'Host seems down', try adding '-Pn' to skip host discovery. Some routers block ping probes but still have open ports.",
+      "legalNote": "Only run this on YOUR home network. Scanning other networks is illegal."
+    },
+    {
+      "command": "ip a",
+      "description": "Check your own IP address and network interface info. This tells you which subnet you're on so you know what range to scan.",
+      "expectedOutput": "2: eth0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500\n    inet 192.168.1.105/24 brd 192.168.1.255 scope global dynamic eth0\n       valid_lft 86123sec preferred_lft 86123sec",
+      "safety": "restricted",
+      "troubleshooting": "On older systems, use 'ifconfig' instead. Look for the 'inet' line — that's your IP address.",
+      "legalNote": "Only run this on YOUR home network. Scanning other networks is illegal."
+    },
+    {
+      "command": "nmap -p 22,80,443 192.168.1.1",
+      "description": "Scan only specific ports (22, 80, 443) on a device. This is much faster than scanning all ports and useful when you know what you're looking for.",
+      "expectedOutput": "Starting Nmap 7.94 ( https://nmap.org )\nNmap scan report for 192.168.1.1\nHost is up (0.0018s latency).\n\nPORT    STATE  SERVICE\n22/tcp  open   ssh\n80/tcp  open   http\n443/tcp open   https\n\nNmap done: 1 IP address (1 host up) scanned in 0.12 seconds",
+      "safety": "restricted",
+      "troubleshooting": null,
+      "legalNote": "Only run this on YOUR home network. Scanning other networks is illegal."
+    },
+    {
+      "command": "nmap -p 1-1000 192.168.1.1",
+      "description": "Scan the first 1000 ports on your router. By default nmap only checks the top 1000 most common ports — this explicitly sets that range.",
+      "expectedOutput": "Starting Nmap 7.94 ( https://nmap.org )\nNmap scan report for 192.168.1.1\nHost is up (0.0025s latency).\nNot shown: 996 closed tcp ports\nPORT    STATE SERVICE\n22/tcp  open  ssh\n53/tcp  open  domain\n80/tcp  open  http\n443/tcp open  https\n\nNmap done: 1 IP address (1 host up) scanned in 2.15 seconds",
+      "safety": "restricted",
+      "troubleshooting": "Scanning all 65535 ports with '-p-' takes much longer (minutes to hours). Start with the default or top 1000 first.",
+      "legalNote": "Only run this on YOUR home network. Scanning other networks is illegal."
+    },
+    {
+      "command": "nmap -v 192.168.1.0/24",
+      "description": "Run a verbose scan that shows you progress in real-time. The -v flag makes nmap print results as it finds them instead of waiting until the end.",
+      "expectedOutput": "Starting Nmap 7.94 ( https://nmap.org )\nInitiating Ping Scan at 14:32\nScanning 256 hosts [2 ports/host]\nCompleted Ping Scan at 14:32, 2.41s elapsed (256 total hosts)\nInitiating Parallel DNS resolution of 4 hosts.\nDiscovered open port 80/tcp on 192.168.1.1\nDiscovered open port 22/tcp on 192.168.1.1\nDiscovered open port 22/tcp on 192.168.1.105\n...\nNmap done: 256 IP addresses (4 hosts up) scanned in 14.52 seconds",
+      "safety": "restricted",
+      "troubleshooting": "Use -vv for even more detail. Useful for debugging when scans seem stuck.",
+      "legalNote": "Only run this on YOUR home network. Scanning other networks is illegal."
+    }
+  ],
+  "challenge": {
+    "question": "Scan your home network and count how many devices are connected. Which device has the most open ports? What services are running on those ports?",
+    "hint": "Use 'sudo nmap 192.168.1.0/24' (adjust the subnet if yours is different). Look at the summary line at the bottom that says 'X hosts up'. For the device with the most ports, check each scan report section.",
+    "answer": "Results will vary per network. Your router (usually .1) typically has the most open ports (SSH, DNS, HTTP, HTTPS). Count the 'Host is up' entries for total devices. Common surprises: smart TVs with open ports, forgotten IoT devices, or neighbors' devices if your WiFi password is weak."
+  },
+  "realWorld": "In 2017, a 14-year-old student in the UK was visited by police after running nmap scans on his school's network from a classroom computer. Even though he didn't access any data, the school reported it as a 'hacking attempt.' The incident is a reminder: even simple reconnaissance tools like nmap can land you in serious trouble if used on networks you don't own. The student faced disciplinary action and a police warning.",
+  "funFact": "nmap can scan the entire internet (all 4.3 billion IPv4 addresses) in under 45 minutes using its sibling tool 'masscan'. Researchers have done this to map every publicly accessible device on Earth — and found millions of devices with zero security, including baby monitors, traffic lights, and power plant controls."
+}

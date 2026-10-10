@@ -1,0 +1,68 @@
+{
+  "id": 10,
+  "slug": "service-detection",
+  "title": "Service Detection",
+  "module": 3,
+  "moduleName": "Scanning & Reconnaissance",
+  "difficulty": "Apprentice",
+  "objective": "Learn how to use nmap's service detection to identify exactly what software is running on open ports and understand banner grabbing.",
+  "legalWarning": "Only scan networks and devices you own. Scanning others' networks without permission is illegal under the Computer Fraud and Abuse Act (US), Computer Misuse Act (UK), and similar laws worldwide. Penalties include fines and prison.",
+  "explanation": "In the last lesson, you found open ports on your network. But knowing that port 80 is open is like knowing a shop is open — you still don't know what they're selling. Service detection tells you exactly what software is running behind each open port, including its version number.\n\nThis is where things get serious for security. If nmap tells you a device is running 'Apache httpd 2.4.29', you can instantly look up whether that specific version has known vulnerabilities. Outdated software is one of the most common ways hackers break into systems.\n\nnmap uses a technique called banner grabbing to identify services. When you connect to a port, many services send back a 'banner' — a little greeting message that often includes the software name and version. Try it yourself: if you connect to a web server, it might respond with 'Server: Apache/2.4.29 (Ubuntu)'. That single line tells an attacker the web server software, its exact version, and even the operating system.\n\nThe '-sV' flag in nmap activates service version detection. It goes beyond simple banner grabbing — it sends specially crafted probes to the port and compares the responses against a database of over 11,000 known service signatures. It can identify services even when they try to hide their identity.\n\nYou can control how hard nmap tries with the '--version-intensity' flag (0-9). Lower numbers are faster but less accurate. The default is 7, which is good for most cases. Level 9 tries every single probe and takes the longest.\n\nWhy does this matter? In real-world penetration testing, service detection is the bridge between 'I found an open port' and 'I found a vulnerability I can exploit.' It's the difference between knowing a door is unlocked and knowing exactly what's behind it. Professional pentesters spend significant time in this phase because accurate service identification determines the entire attack strategy.",
+  "commands": [
+    {
+      "command": "nmap -sV 192.168.1.1",
+      "description": "Run a service version scan on your router. This probes each open port to determine what software and version is running behind it.",
+      "expectedOutput": "Starting Nmap 7.94 ( https://nmap.org )\nNmap scan report for 192.168.1.1\nHost is up (0.0023s latency).\nNot shown: 996 closed tcp ports\nPORT    STATE SERVICE  VERSION\n22/tcp  open  ssh      OpenSSH 8.9p1 Ubuntu 3ubuntu0.1\n53/tcp  open  domain   dnsmasq 2.86\n80/tcp  open  http     lighttpd 1.4.59\n443/tcp open  https    lighttpd 1.4.59\n\nService detection performed. Please report any incorrect results at https://nmap.org/submit/\nNmap done: 1 IP address (1 host up) scanned in 7.23 seconds",
+      "safety": "restricted",
+      "troubleshooting": "Service detection takes longer than a basic scan. If it hangs, try adding '--version-intensity 2' for a lighter probe set. Some devices may rate-limit or block repeated probes.",
+      "legalNote": "Only run this on YOUR home network. Scanning other networks is illegal."
+    },
+    {
+      "command": "nmap -sV --version-intensity 9 192.168.1.1",
+      "description": "Run the most thorough service detection possible. Intensity 9 tries every probe in nmap's database. Slower but catches services that try to hide.",
+      "expectedOutput": "Starting Nmap 7.94 ( https://nmap.org )\nNmap scan report for 192.168.1.1\nPORT    STATE SERVICE  VERSION\n22/tcp  open  ssh      OpenSSH 8.9p1 Ubuntu 3ubuntu0.1 (Ubuntu Linux; protocol 2.0)\n53/tcp  open  domain   dnsmasq 2.86\n80/tcp  open  http     lighttpd 1.4.59\n443/tcp open  ssl/http lighttpd 1.4.59\n\nNmap done: 1 IP address (1 host up) scanned in 22.47 seconds",
+      "safety": "restricted",
+      "troubleshooting": "This can take 3-5x longer than default. Use it when the default scan shows 'tcpwrapped' or 'unknown' for a service you want to identify.",
+      "legalNote": "Only run this on YOUR home network. Scanning other networks is illegal."
+    },
+    {
+      "command": "hackeryoung@kali:~$ nc -v 192.168.1.1 80",
+      "description": "Use netcat (nc) for manual banner grabbing. Connect directly to port 80 and type 'HEAD / HTTP/1.0' followed by two Enter presses to see the server's response headers.",
+      "expectedOutput": "Connection to 192.168.1.1 80 port [tcp/http] succeeded!\nHTTP/1.0 200 OK\nServer: lighttpd/1.4.59\nContent-Type: text/html\nDate: Sat, 10 Oct 2026 14:22:33 GMT",
+      "safety": "restricted",
+      "troubleshooting": "After connecting, you need to type 'HEAD / HTTP/1.0' and press Enter twice. If the connection closes immediately, the server may not support HTTP/1.0 — try 'HEAD / HTTP/1.1' with a 'Host: 192.168.1.1' header on the next line.",
+      "legalNote": "Only run this on YOUR home network. Scanning other networks is illegal."
+    },
+    {
+      "command": "hackeryoung@kali:~$ nc -v 192.168.1.1 22",
+      "description": "Banner grab the SSH service. SSH servers almost always announce their version immediately upon connection — no special request needed.",
+      "expectedOutput": "Connection to 192.168.1.1 22 port [tcp/ssh] succeeded!\nSSH-2.0-OpenSSH_8.9p1 Ubuntu-3ubuntu0.1",
+      "safety": "restricted",
+      "troubleshooting": "If you see 'Connection refused', SSH isn't running on that device. Try a different device on your network that has port 22 open.",
+      "legalNote": "Only run this on YOUR home network. Scanning other networks is illegal."
+    },
+    {
+      "command": "nmap -sV -p 22,80,443,8080,8443 192.168.1.0/24",
+      "description": "Scan common web and SSH ports across your entire home network with service detection. Great for finding web interfaces on smart devices.",
+      "expectedOutput": "Nmap scan report for 192.168.1.1\nPORT     STATE  SERVICE  VERSION\n22/tcp   open   ssh      OpenSSH 8.9p1\n80/tcp   open   http     lighttpd 1.4.59\n443/tcp  open   https    lighttpd 1.4.59\n8080/tcp closed http-proxy\n\nNmap scan report for 192.168.1.50\nPORT     STATE  SERVICE VERSION\n8080/tcp open   http    Roku Web Server\n\nNmap done: 256 IP addresses (5 hosts up) scanned in 18.93 seconds",
+      "safety": "restricted",
+      "troubleshooting": "If the scan takes too long, reduce the port list or scan fewer IPs. Smart home devices often run web servers on unusual ports like 8080, 8443, or 9090.",
+      "legalNote": "Only run this on YOUR home network. Scanning other networks is illegal."
+    },
+    {
+      "command": "nmap -sV --script=banner 192.168.1.1",
+      "description": "Use nmap's banner script for additional banner grabbing alongside service detection. This can sometimes reveal extra information that -sV alone misses.",
+      "expectedOutput": "PORT    STATE SERVICE  VERSION\n22/tcp  open  ssh      OpenSSH 8.9p1 Ubuntu 3ubuntu0.1\n|_banner: SSH-2.0-OpenSSH_8.9p1 Ubuntu-3ubuntu0.1\n80/tcp  open  http     lighttpd 1.4.59\n|_banner: HTTP/1.0 200 OK\\x0D\\x0AServer: lighttpd/1.4.59",
+      "safety": "restricted",
+      "troubleshooting": null,
+      "legalNote": "Only run this on YOUR home network. Scanning other networks is illegal."
+    }
+  ],
+  "challenge": {
+    "question": "Run a service detection scan on your home network. Find at least one device running an outdated software version. What version is it, and can you find any known vulnerabilities for it?",
+    "hint": "Use 'nmap -sV 192.168.1.0/24' to scan your network. Note the version numbers. Then search Google or cvedetails.com for '[software name] [version] CVE' to see if any vulnerabilities are known.",
+    "answer": "Results vary by network. Common finds include outdated SSH versions on routers, old web server versions on smart TVs, or legacy UPnP services. Even finding that your router runs 'dnsmasq 2.78' when the latest is 2.89 is a meaningful discovery — check CVE databases for that version."
+  },
+  "realWorld": "In 2021, security researchers used service detection scans to discover that over 100,000 internet-connected printers were exposing their admin panels without passwords. By simply scanning for port 9100 (the standard printer port) and identifying the service versions, they found printers from HP, Canon, and Epson that could be remotely controlled — including printing arbitrary documents. Some researchers printed friendly warning messages to thousands of printers to alert their owners.",
+  "funFact": "nmap's service detection database (nmap-service-probes) contains over 11,000 signatures and can identify more than 1,200 different applications. It even knows the difference between various versions of Minecraft servers, Bitcoin nodes, and smart refrigerators. The community has been contributing signatures since 1998."
+}

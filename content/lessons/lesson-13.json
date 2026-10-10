@@ -1,0 +1,60 @@
+{
+  "id": 13,
+  "slug": "how-wifi-works",
+  "title": "How WiFi Works",
+  "module": 4,
+  "moduleName": "WiFi & Wireless Security",
+  "difficulty": "Apprentice",
+  "objective": "Understand the fundamentals of WiFi technology including WPA2/WPA3, SSID, channels, frequency bands, and the 4-way handshake authentication process.",
+  "legalWarning": "Only scan networks and devices you own. Scanning others' networks without permission is illegal under the Computer Fraud and Abuse Act (US), Computer Misuse Act (UK), and similar laws worldwide. Penalties include fines and prison.",
+  "explanation": "Before you can hack WiFi (ethically, on your own network), you need to understand how it actually works. WiFi is just radio waves — your router is basically a tiny radio station broadcasting data through the air.\n\nYour router broadcasts on one of two frequency bands:\n- **2.4 GHz**: Slower (up to ~600 Mbps) but travels farther and penetrates walls better. Has 11 channels in the US (13 in Europe), but only channels 1, 6, and 11 don't overlap with each other. This band is crowded — microwaves, Bluetooth, baby monitors, and your neighbor's WiFi all compete here.\n- **5 GHz**: Faster (up to ~3.5 Gbps) with many more non-overlapping channels, but shorter range and weaker wall penetration. Less interference because fewer devices use it.\n\nYour network's name (SSID — Service Set Identifier) is broadcast continuously in beacon frames, which is how your phone finds available networks. You can hide the SSID, but this is security theater — any hacker can see 'hidden' networks easily with the right tools.\n\nNow for the security protocols. WiFi encryption has evolved over the years:\n- **WEP** (1999): Completely broken. Can be cracked in minutes. If you're still using WEP, stop reading and go change it RIGHT NOW.\n- **WPA** (2003): Temporary fix. Also crackable.\n- **WPA2** (2004): The current standard. Uses AES encryption. Secure if you have a strong password.\n- **WPA3** (2018): The newest standard. Fixes WPA2's weaknesses. Uses SAE (Simultaneous Authentication of Equals) instead of the 4-way handshake, making offline dictionary attacks impossible.\n\nThe 4-way handshake is how WPA2 proves you know the password without ever sending the password itself. Here's the simplified version:\n1. Router sends a random number (ANonce) to your device\n2. Your device combines ANonce + its own random number (SNonce) + the WiFi password to create a session key, then sends SNonce back\n3. Router does the same math and sends the encrypted group key\n4. Your device confirms everything matches\n\nIf an attacker captures this handshake (which travels through the air), they can try to crack it offline by guessing passwords and doing the same math. That's why strong WiFi passwords matter — a password like 'password123' can be cracked in seconds, while 'j7$kP2!mQ9xR4@wL' could take millions of years.",
+  "commands": [
+    {
+      "command": "iwconfig",
+      "description": "Show your wireless network interfaces and their current settings. Displays the interface name, SSID you're connected to, frequency, signal strength, and more.",
+      "expectedOutput": "hackeryoung@kali:~$ iwconfig\nwlan0     IEEE 802.11  ESSID:\"MyHomeWiFi\"\n          Mode:Managed  Frequency:5.18 GHz  Access Point: AA:BB:CC:DD:EE:FF\n          Bit Rate=866.7 Mb/s   Tx-Power=20 dBm\n          Retry short limit:7   RTS thr:off   Fragment thr:off\n          Power Management:on\n          Link Quality=65/70  Signal level=-45 dBm\n          Rx invalid nwid:0  Rx invalid crypt:0  Rx invalid frag:0\n          Tx excessive retries:0  Invalid misc:0   Missed beacon:0\n\nlo        no wireless extensions.",
+      "safety": "restricted",
+      "troubleshooting": "If wlan0 doesn't appear, your wireless card might not be detected. Run 'lsusb' to check if your USB WiFi adapter is recognized, or 'ip link' to see all interfaces.",
+      "legalNote": "Only run this on YOUR home network. Scanning other networks is illegal."
+    },
+    {
+      "command": "iw dev wlan0 info",
+      "description": "Get detailed info about your wireless interface using the modern 'iw' tool. Shows the current channel, frequency, interface type, and transmit power.",
+      "expectedOutput": "hackeryoung@kali:~$ iw dev wlan0 info\nInterface wlan0\n\tifindex 3\n\twdev 0x1\n\taddr aa:bb:cc:dd:ee:ff\n\tssid MyHomeWiFi\n\ttype managed\n\twiphy 0\n\tchannel 36 (5180 MHz), width: 80 MHz, center1: 5210 MHz\n\ttxpower 20.00 dBm",
+      "safety": "restricted",
+      "troubleshooting": "If you get 'command not found', install iw with 'sudo apt install iw'. The 'iw' tool is the modern replacement for 'iwconfig'.",
+      "legalNote": "Only run this on YOUR home network. Scanning other networks is illegal."
+    },
+    {
+      "command": "iw dev wlan0 scan | grep -E 'SSID|signal|freq|RSN|WPA'",
+      "description": "Scan for nearby WiFi networks and show their names, signal strength, frequency, and security type. This is the command-line equivalent of your phone's WiFi list.",
+      "expectedOutput": "hackeryoung@kali:~$ iw dev wlan0 scan | grep -E 'SSID|signal|freq|RSN|WPA'\n\tfreq: 5180\n\tsignal: -45.00 dBm\n\tSSID: MyHomeWiFi\n\tRSN:\t * Version: 1\n\tfreq: 2437\n\tsignal: -62.00 dBm\n\tSSID: Neighbors_WiFi\n\tWPA:\t * Version: 1\n\tfreq: 2412\n\tsignal: -78.00 dBm\n\tSSID: CoffeeShop_Free\n\tRSN:\t * Version: 1",
+      "safety": "restricted",
+      "troubleshooting": "This scan requires your interface to be in managed mode (the default). If you get permission errors, add 'sudo'. If no networks appear, your WiFi card might not support scanning in its current state.",
+      "legalNote": "Only run this on YOUR home network. Scanning other networks is illegal."
+    },
+    {
+      "command": "nmcli dev wifi list",
+      "description": "A user-friendly way to list all visible WiFi networks with their channel, signal strength, security type, and frequency band. Easier to read than raw iw output.",
+      "expectedOutput": "hackeryoung@kali:~$ nmcli dev wifi list\nIN-USE  BSSID              SSID            MODE   CHAN  RATE        SIGNAL  BARS  SECURITY\n*       AA:BB:CC:DD:EE:FF  MyHomeWiFi      Infra  36    270 Mbit/s  87      ████  WPA2\n        11:22:33:44:55:66  Neighbors_WiFi  Infra  6     54 Mbit/s   45      ▂▄__  WPA1\n        77:88:99:AA:BB:CC  CoffeeShop      Infra  1     54 Mbit/s   22      ▂___  WPA2",
+      "safety": "restricted",
+      "troubleshooting": "If nmcli isn't available, install NetworkManager with 'sudo apt install network-manager'. Some minimal Kali installations don't include it by default.",
+      "legalNote": "Only run this on YOUR home network. Scanning other networks is illegal."
+    },
+    {
+      "command": "iw list | grep -A 15 'Frequencies'",
+      "description": "List all frequencies and channels your WiFi card supports. This tells you whether your adapter can do both 2.4 GHz and 5 GHz scanning.",
+      "expectedOutput": "hackeryoung@kali:~$ iw list | grep -A 15 'Frequencies'\n\t\tFrequencies:\n\t\t\t* 2412 MHz [1] (20.0 dBm)\n\t\t\t* 2417 MHz [2] (20.0 dBm)\n\t\t\t* 2422 MHz [3] (20.0 dBm)\n\t\t\t* 2427 MHz [4] (20.0 dBm)\n\t\t\t* 2432 MHz [5] (20.0 dBm)\n\t\t\t* 2437 MHz [6] (20.0 dBm)\n\t\t\t* 2442 MHz [7] (20.0 dBm)\n\t\t\t* 2447 MHz [8] (20.0 dBm)\n\t\t\t* 2452 MHz [9] (20.0 dBm)\n\t\t\t* 2457 MHz [10] (20.0 dBm)\n\t\t\t* 2462 MHz [11] (20.0 dBm)\n\t\t\t* 5180 MHz [36] (20.0 dBm)\n\t\t\t* 5200 MHz [40] (20.0 dBm)\n\t\t\t* 5220 MHz [44] (20.0 dBm)",
+      "safety": "restricted",
+      "troubleshooting": "If you only see 2.4 GHz frequencies, your WiFi adapter doesn't support 5 GHz. For serious WiFi hacking labs, you'll want a dual-band adapter. Popular choices: Alfa AWUS036ACH or Alfa AWUS036ACHM.",
+      "legalNote": "Only run this on YOUR home network. Scanning other networks is illegal."
+    }
+  ],
+  "challenge": {
+    "question": "Check what security protocol your home WiFi uses (WPA2 or WPA3). What channel is it on? Is it using 2.4 GHz or 5 GHz? If you have neighbors visible, are any of them still using WPA1 or WEP?",
+    "hint": "Use 'nmcli dev wifi list' for the easiest view, or 'sudo iw dev wlan0 scan' for more detail. Look at the SECURITY column and the CHAN (channel) column. Channels 1-11 are 2.4 GHz, channels 36+ are 5 GHz.",
+    "answer": "Most modern networks use WPA2. If you see any network using WEP or 'Open' (no security), that network is extremely vulnerable. Your channel should ideally be 1, 6, or 11 on 2.4 GHz to avoid interference. If you're on 5 GHz, you'll see higher channel numbers (36, 40, 44, etc.) and typically better performance."
+  },
+  "realWorld": "In 2017, researcher Mathy Vanhoef discovered KRACK (Key Reinstallation Attacks), a fundamental flaw in the WPA2 4-way handshake itself — not in any specific implementation, but in the protocol design. This meant every single WPA2 device in the world was vulnerable. Android phones were especially affected — an attacker could force Android to use an all-zero encryption key, making all traffic readable. This discovery accelerated the development of WPA3, which was released the following year.",
+  "funFact": "WiFi was never supposed to stand for anything. The WiFi Alliance hired a branding company in 1999 to come up with a catchier name than 'IEEE 802.11b Direct Sequence.' They picked 'WiFi' because it sounded like 'HiFi' (High Fidelity) and was easy to remember. The tagline 'Wireless Fidelity' was added later but eventually dropped because WiFi literally means nothing — it's just a made-up brand name."
+}

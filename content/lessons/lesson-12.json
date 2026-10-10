@@ -1,0 +1,68 @@
+{
+  "id": 12,
+  "slug": "vulnerabilities-and-cves",
+  "title": "Vulnerabilities & CVEs",
+  "module": 3,
+  "moduleName": "Scanning & Reconnaissance",
+  "difficulty": "Apprentice",
+  "objective": "Understand what CVEs are, how CVSS scoring rates vulnerability severity, and how to responsibly search vulnerability databases.",
+  "legalWarning": "Only scan networks and devices you own. Scanning others' networks without permission is illegal under the Computer Fraud and Abuse Act (US), Computer Misuse Act (UK), and similar laws worldwide. Penalties include fines and prison.",
+  "explanation": "You've learned to find open ports, identify services, and detect operating systems. Now comes the question every hacker asks: 'Is any of this stuff vulnerable?'\n\nA vulnerability is a weakness in software that can be exploited. When researchers or hackers discover one, it gets a CVE number — Common Vulnerabilities and Exposures. Think of it as a social security number for bugs. CVE-2024-3094 is the infamous XZ Utils backdoor. CVE-2021-44228 is Log4Shell. CVE-2017-0144 is EternalBlue (the WannaCry exploit). Each one is a specific, documented weakness.\n\nThe format is always CVE-YEAR-NUMBER. The year is when it was reported (not necessarily when it was found), and the number is just a sequential ID. MITRE Corporation manages the CVE system, and anyone — including you — can request a CVE number for a bug you discover.\n\nBut not all vulnerabilities are equal. A bug that crashes a calculator app is very different from one that gives remote root access to a nuclear power plant. That's where CVSS (Common Vulnerability Scoring System) comes in. It rates each vulnerability from 0.0 to 10.0:\n- **0.0**: No impact\n- **0.1-3.9**: Low severity\n- **4.0-6.9**: Medium severity\n- **7.0-8.9**: High severity\n- **9.0-10.0**: Critical — drop everything and patch NOW\n\nLog4Shell scored a perfect 10.0. It let attackers execute code on any server running Java's Log4j library just by sending a chat message. Billions of devices were vulnerable.\n\nThe most important databases to know are:\n- **NVD** (nvd.nist.gov): The US government's official CVE database with CVSS scores\n- **CVE.org**: The official CVE list maintained by MITRE\n- **Exploit-DB** (exploit-db.com): Actual exploit code (for educational and authorized testing only)\n\nWhen you find a vulnerability in someone else's system, the ethical path is responsible disclosure — you report it to the vendor privately and give them time to fix it before going public. Many companies run bug bounty programs that pay you for this. Google pays up to $250,000 for a single critical Android bug. Apple pays up to $2,000,000 for the most severe iPhone vulnerabilities.",
+  "commands": [
+    {
+      "command": "nmap -sV --script=vulners 192.168.1.1",
+      "description": "Scan your router with nmap's vulners script. This identifies services and then checks the Vulners database for known CVEs matching those service versions.",
+      "expectedOutput": "PORT    STATE SERVICE VERSION\n22/tcp  open  ssh     OpenSSH 8.9p1\n| vulners:\n|   cpe:/a:openbsd:openssh:8.9p1:\n|     CVE-2023-38408  9.8  https://vulners.com/cve/CVE-2023-38408\n|     CVE-2023-28531  7.5  https://vulners.com/cve/CVE-2023-28531\n80/tcp  open  http    lighttpd 1.4.59\n| vulners:\n|     CVE-2022-22707  5.9  https://vulners.com/cve/CVE-2022-22707",
+      "safety": "restricted",
+      "troubleshooting": "The vulners script requires internet access to check the database. If you get errors, ensure your Kali machine has internet. You may need to install the script first: 'sudo nmap --script-updatedb'.",
+      "legalNote": "Only run this on YOUR home network. Scanning other networks is illegal."
+    },
+    {
+      "command": "searchsploit openssh 8.9",
+      "description": "Search Exploit-DB's offline database (included in Kali) for known exploits matching OpenSSH version 8.9. searchsploit works without internet.",
+      "expectedOutput": "hackeryoung@kali:~$ searchsploit openssh 8.9\n---------------------------------------------- ---------------------------------\n Exploit Title                                |  Path\n---------------------------------------------- ---------------------------------\n OpenSSH 8.7-9.5 - PKCS11 Remote Code Exec    | linux/remote/51747.py\n OpenSSH < 9.6 - Agent Forwarding RCE          | linux/remote/51752.c\n---------------------------------------------- ---------------------------------\nShellcodes: No Results",
+      "safety": "restricted",
+      "troubleshooting": "If searchsploit returns no results, try broader terms like 'searchsploit openssh' without the version. The database is updated with 'searchsploit -u'.",
+      "legalNote": "Only run this on YOUR home network. Scanning other networks is illegal."
+    },
+    {
+      "command": "searchsploit -x linux/remote/51747.py",
+      "description": "View the details of a specific exploit from the search results. The -x flag opens the exploit file so you can read the code and understand what it does. NEVER run exploits on systems you don't own.",
+      "expectedOutput": "hackeryoung@kali:~$ searchsploit -x linux/remote/51747.py\n# Exploit Title: OpenSSH PKCS11 Remote Code Execution\n# CVE: CVE-2023-38408\n# Date: 2023-07-19\n# Author: Qualys Security Advisory\n# Description: A remote code execution vulnerability in OpenSSH's\n#   forwarded ssh-agent through PKCS#11 support...\n[exploit code follows]",
+      "safety": "restricted",
+      "troubleshooting": "Use -x to READ exploits, never -m (mirror/copy) unless you're setting up an authorized pentest lab. Understanding exploit code is educational — running it on unauthorized systems is a crime.",
+      "legalNote": "Only run this on YOUR home network. Scanning other networks is illegal."
+    },
+    {
+      "command": "nmap --script=vuln 192.168.1.1",
+      "description": "Run nmap's built-in vulnerability scanning scripts against your router. This checks for common vulnerabilities like SSL/TLS issues, default credentials, and known exploits.",
+      "expectedOutput": "PORT    STATE SERVICE\n80/tcp  open  http\n| http-csrf: Couldn't find any CSRF vulnerabilities.\n| http-dombased-xss: Couldn't find any DOM based XSS.\n|_http-stored-xss: Couldn't find any stored XSS vulnerabilities.\n443/tcp open  https\n| ssl-poodle:\n|   VULNERABLE:\n|   SSL POODLE information leak\n|     State: VULNERABLE\n|     IDs:  CVE:CVE-2014-3566\n|     Risk factor: Medium\n|     Description: The SSL protocol 3.0 allows a man-in-the-middle attacker to decrypt data",
+      "safety": "restricted",
+      "troubleshooting": "Vulnerability scripts can take several minutes to run. They may also trigger security alerts on your router. If the scan seems stuck, try targeting specific scripts like '--script=ssl-poodle' instead of the full vuln category.",
+      "legalNote": "Only run this on YOUR home network. Scanning other networks is illegal."
+    },
+    {
+      "command": "hackeryoung@kali:~$ curl -s \"https://services.nvd.nist.gov/rest/json/cves/2.0?keywordSearch=openssh\" | python3 -m json.tool | head -50",
+      "description": "Query the NVD (National Vulnerability Database) API directly for CVEs related to OpenSSH. This shows you real vulnerability data from the US government's official database.",
+      "expectedOutput": "{\n    \"resultsPerPage\": 20,\n    \"startIndex\": 0,\n    \"totalResults\": 127,\n    \"vulnerabilities\": [\n        {\n            \"cve\": {\n                \"id\": \"CVE-2023-38408\",\n                \"descriptions\": [\n                    {\n                        \"lang\": \"en\",\n                        \"value\": \"The PKCS#11 feature in ssh-agent in OpenSSH before 9.3p2 has...\"\n                    }\n                ],\n                \"metrics\": {\n                    \"cvssMetricV31\": [\n                        {\n                            \"cvssData\": {\n                                \"baseScore\": 9.8\n                            }\n                        }\n                    ]\n                }\n            }\n        }\n    ]\n}",
+      "safety": "restricted",
+      "troubleshooting": "The NVD API may rate-limit you. If you get empty results or errors, wait a few seconds and try again. You can also get a free API key at nvd.nist.gov for higher rate limits.",
+      "legalNote": "Only run this on YOUR home network. Scanning other networks is illegal."
+    },
+    {
+      "command": "searchsploit -u",
+      "description": "Update the local Exploit-DB database on your Kali machine. Run this periodically to get the latest exploits and CVE references.",
+      "expectedOutput": "hackeryoung@kali:~$ searchsploit -u\n[i] Updating SearchSploit...\n[i] Checking for updates...\n[*] Update complete!\n[i] Path: /usr/share/exploitdb\n[i] Exploit-DB entries: 47,342",
+      "safety": "restricted",
+      "troubleshooting": "Requires internet access and sudo permissions. If it fails, try 'sudo apt update && sudo apt install exploitdb' to reinstall.",
+      "legalNote": "Only run this on YOUR home network. Scanning other networks is illegal."
+    }
+  ],
+  "challenge": {
+    "question": "Run a service detection scan on your router, pick one service with a version number, and look it up in the NVD (nvd.nist.gov). What's the highest CVSS score CVE you can find for that service version? Would you classify it as Low, Medium, High, or Critical?",
+    "hint": "First run 'nmap -sV 192.168.1.1' to get service versions. Then visit nvd.nist.gov and search for the service name and version. Sort by CVSS score to find the worst one. Or use searchsploit on Kali for offline searching.",
+    "answer": "Results vary. Common finds: OpenSSH versions often have Medium (4.0-6.9) CVEs for info leaks and High (7.0-8.9) CVEs for auth bypasses. Web servers like Apache/nginx frequently have Medium CVEs for denial-of-service. If your router hasn't been updated, you might find Critical (9.0+) CVEs — which is a great reason to update your firmware!"
+  },
+  "realWorld": "In December 2021, CVE-2021-44228 (Log4Shell, CVSS 10.0) was disclosed in Apache Log4j, a Java logging library used by millions of applications. Within hours, attackers were actively exploiting it worldwide. Minecraft servers were among the first targets — a player could simply type a special string in the chat box and execute code on the server. Companies scrambled for weeks to patch their systems. The incident showed why CVE tracking matters: the vulnerability was in a tiny library that most people had never heard of, but it was embedded in everything from iCloud to Tesla to the Mars helicopter's ground systems.",
+  "funFact": "The youngest person to ever receive a CVE credit was a 10-year-old boy from Finland who discovered a vulnerability in Instagram in 2016. Facebook paid him $10,000 through their bug bounty program — making him likely the youngest person to earn five figures from a tech company. He found that he could delete any comment on Instagram by modifying a single parameter in the API request."
+}

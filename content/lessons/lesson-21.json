@@ -1,0 +1,84 @@
+{
+  "id": 21,
+  "slug": "firewalls-network-defense",
+  "title": "Firewalls & Network Defense",
+  "module": 6,
+  "moduleName": "Defense & Privacy",
+  "difficulty": "Hacker",
+  "objective": "Learn how firewalls work, configure basic firewall rules with ufw and iptables, and understand network segmentation and DMZ concepts.",
+  "legalWarning": null,
+  "explanation": "So far in this course, you've been learning how attackers think and what they exploit. Now it's time to switch sides and learn how defenders stop them. The first line of defense in any network is the firewall.\n\nA firewall is like a bouncer at a club — it decides which network traffic gets in and which gets blocked. Every piece of data on the internet travels in packets, and each packet has a source IP, destination IP, source port, and destination port. Firewalls inspect these packets and apply rules: 'Allow traffic on port 443 (HTTPS), block traffic on port 23 (Telnet), drop anything from IP 192.168.1.100.'\n\nLinux has a built-in firewall called iptables (now supplemented by nftables). It's incredibly powerful but the syntax is complex, which is why Ubuntu created ufw (Uncomplicated Firewall) as a simpler front-end. Kali Linux has both available.\n\nFirewall rules work in order — the first matching rule wins. A typical server configuration follows the 'default deny' principle: block everything by default, then explicitly allow only what's needed. This means if you forget to open a port, the traffic is blocked (safe by default). The opposite — 'default allow' with specific blocks — is dangerous because you might forget to block something.\n\nBeyond simple firewalls, large networks use segmentation to limit damage. If an attacker breaks into your web server, network segmentation prevents them from reaching your database server. A DMZ (Demilitarized Zone) is a special network segment for public-facing servers — they can talk to the internet and to internal servers through strict rules, but they're isolated from the rest of the network.\n\nIn this lesson, you'll configure firewall rules on YOUR OWN Kali machine. You'll block and allow ports, check your rules, and learn to think like a network defender. All commands run on your local system — you're defending yourself.",
+  "commands": [
+    {
+      "command": "sudo ufw status verbose",
+      "description": "Checks the current status of your firewall. On a fresh Kali install, ufw is usually inactive. This tells you whether your machine is currently protected or wide open.",
+      "expectedOutput": "Status: inactive",
+      "safety": "active",
+      "troubleshooting": "If ufw is not found, install it: 'sudo apt install ufw'. If it says 'active' already, that's fine — you can still follow along.",
+      "legalNote": null
+    },
+    {
+      "command": "sudo ufw default deny incoming && sudo ufw default allow outgoing",
+      "description": "Sets the fundamental firewall policy: block all incoming connections by default but allow outgoing. This is the 'default deny' approach — the gold standard of firewall configuration. You can still browse the web (outgoing), but no one can connect to your machine (incoming) unless you explicitly allow it.",
+      "expectedOutput": "Default incoming policy changed to 'deny'\nDefault outgoing policy changed to 'allow'",
+      "safety": "active",
+      "troubleshooting": "If you get a permission error, make sure you're using sudo. If ufw complains about being active, these commands still work — they update the default policy.",
+      "legalNote": null
+    },
+    {
+      "command": "sudo ufw allow 22/tcp comment 'SSH access'",
+      "description": "Opens port 22 (SSH) so you can still remotely access your machine. In the real world, you'd also restrict this to specific IP addresses. The comment helps you remember why this rule exists months later.",
+      "expectedOutput": "Rule added\nRule added (v6)",
+      "safety": "active",
+      "troubleshooting": "If you're not using SSH to access your Kali VM (you're using the VM console directly), you can skip this rule. But it's good practice to understand it.",
+      "legalNote": null
+    },
+    {
+      "command": "sudo ufw allow 80/tcp comment 'HTTP web server' && sudo ufw allow 443/tcp comment 'HTTPS web server'",
+      "description": "Opens ports 80 (HTTP) and 443 (HTTPS) — the standard web server ports. If you were running a web server, these would let visitors reach it while all other ports remain blocked.",
+      "expectedOutput": "Rule added\nRule added (v6)\nRule added\nRule added (v6)",
+      "safety": "active",
+      "troubleshooting": null,
+      "legalNote": null
+    },
+    {
+      "command": "sudo ufw deny 23/tcp comment 'Block Telnet - insecure' && sudo ufw deny 21/tcp comment 'Block FTP - insecure'",
+      "description": "Explicitly blocks Telnet (port 23) and FTP (port 21). These are old, insecure protocols that send data in plain text. Even though 'default deny' already blocks them, explicit deny rules serve as documentation and will show in logs.",
+      "expectedOutput": "Rule added\nRule added (v6)\nRule added\nRule added (v6)",
+      "safety": "active",
+      "troubleshooting": null,
+      "legalNote": null
+    },
+    {
+      "command": "sudo ufw enable && sudo ufw status numbered",
+      "description": "Activates the firewall and shows all rules with numbers. The numbered view makes it easy to delete specific rules later. Review your rules — does the configuration match your intentions?",
+      "expectedOutput": "Firewall is active and enabled on system startup\nStatus: active\n\n     To                         Action      From\n     --                         ------      ----\n[ 1] 22/tcp                     ALLOW IN    Anywhere                   # SSH access\n[ 2] 80/tcp                     ALLOW IN    Anywhere                   # HTTP web server\n[ 3] 443/tcp                    ALLOW IN    Anywhere                   # HTTPS web server\n[ 4] 23/tcp                     DENY IN     Anywhere                   # Block Telnet - insecure\n[ 5] 21/tcp                     DENY IN     Anywhere                   # Block FTP - insecure",
+      "safety": "active",
+      "troubleshooting": "If you get locked out of SSH after enabling, connect via the VirtualBox console (not SSH) and run 'sudo ufw allow 22/tcp'. If things go wrong, 'sudo ufw disable' turns everything off.",
+      "legalNote": null
+    },
+    {
+      "command": "sudo iptables -L -n -v --line-numbers | head -30",
+      "description": "Shows the underlying iptables rules that ufw created. iptables is the 'real' firewall — ufw just generates these rules for you. As you advance, you'll work with iptables directly for more complex configurations.",
+      "expectedOutput": "Chain INPUT (policy DROP)\nnum   pkts bytes target     prot opt in     out     source               destination\n1        0     0 ufw-before-logging-input  all  --  *      *       0.0.0.0/0            0.0.0.0/0\n...",
+      "safety": "active",
+      "troubleshooting": "If iptables is not found, it might be replaced by nftables on newer systems. Try 'sudo nft list ruleset' instead.",
+      "legalNote": null
+    },
+    {
+      "command": "sudo ufw disable && sudo ufw reset && echo 'Firewall reset to default state.'",
+      "description": "Disables the firewall and removes all rules, returning to the default state. In a lab environment, you want to clean up after experiments. On a real server, you'd NEVER do this.",
+      "expectedOutput": "Firewall stopped and disabled on system startup\nResetting all rules to installed defaults. Proceed with operation (y|n)? y\nFirewall reset to default state.",
+      "safety": "active",
+      "troubleshooting": "If ufw reset asks for confirmation, type 'y' and press Enter. If you want to keep your rules, skip this step.",
+      "legalNote": null
+    }
+  ],
+  "challenge": {
+    "question": "Your company's web server should be accessible to the public on ports 80 and 443. The admin panel is on port 8080 and should only be accessible from the office IP 10.0.1.50. SSH (port 22) should only be accessible from the IT subnet 10.0.2.0/24. Write the ufw commands.",
+    "hint": "Use 'ufw allow from <IP> to any port <port>' syntax for IP-restricted rules. Don't forget the default deny policy first.",
+    "answer": "sudo ufw default deny incoming\nsudo ufw default allow outgoing\nsudo ufw allow 80/tcp\nsudo ufw allow 443/tcp\nsudo ufw allow from 10.0.1.50 to any port 8080\nsudo ufw allow from 10.0.2.0/24 to any port 22\nsudo ufw enable\n\nThis follows the principle of least privilege: only the minimum necessary ports are open, and sensitive ports are restricted to specific IP addresses."
+  },
+  "realWorld": "In the 2020 SolarWinds attack, hackers compromised the Orion software update mechanism and gained access to 18,000 organizations including US government agencies. One reason the damage was so widespread was insufficient network segmentation — once inside, the attackers could move laterally through networks that should have been isolated. Proper firewall rules and network segmentation could have contained the breach to a single segment.",
+  "funFact": "The term 'firewall' comes from construction — it's a wall designed to prevent fire from spreading between buildings or sections. The network firewall concept was invented in the late 1980s when the Morris Worm infected about 10% of all computers connected to the internet (around 6,000 machines). Today, there are over 5 billion internet-connected devices behind firewalls."
+}

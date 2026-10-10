@@ -1,0 +1,68 @@
+{
+  "id": 16,
+  "slug": "flipper-zero-and-hardware-hacking",
+  "title": "Flipper Zero & Hardware Hacking",
+  "module": 4,
+  "moduleName": "WiFi & Wireless Security",
+  "difficulty": "Apprentice",
+  "objective": "Understand what the Flipper Zero can do, learn the basics of NFC, RFID, IR, and Sub-GHz protocols, and know the legal boundaries of hardware hacking tools.",
+  "legalWarning": "Only scan networks and devices you own. Scanning others' networks without permission is illegal under the Computer Fraud and Abuse Act (US), Computer Misuse Act (UK), and similar laws worldwide. Penalties include fines and prison.",
+  "explanation": "So far, everything we've done has been software-based — typing commands on a screen. But hacking isn't just about software. There's a whole world of hardware hacking, and the device that made it accessible to everyone is the Flipper Zero.\n\nThe Flipper Zero looks like a toy — it's a small gadget shaped like a dolphin keychain with a tiny screen. But inside, it's a multi-tool for interacting with the physical world's wireless protocols. Think of it as a Swiss Army knife for radio signals.\n\nHere's what Flipper Zero can do:\n\n**NFC (Near Field Communication)**: The same technology in your phone's tap-to-pay. Flipper can read NFC tags and cards (like building access cards, transit cards, or Amiibo figures). Range: about 4 cm. It can emulate some card types, meaning it can pretend to be a card it previously read.\n\n**RFID (125 kHz)**: Older access cards and key fobs use this frequency. Flipper can read, save, and emulate these. Many office buildings still use easily-cloneable RFID cards — which is exactly why security professionals need to know about this.\n\n**Infrared (IR)**: Flipper has a built-in IR transmitter that works like a universal remote control. It comes with a database of TV, AC, and projector codes. Yes, it can turn off TVs — but doing this to devices you don't own is not ethical hacking, it's just being annoying.\n\n**Sub-GHz Radio**: This is the most powerful feature. Flipper can send and receive signals on frequencies like 315 MHz, 433 MHz, and 868 MHz — used by garage doors, car key fobs, weather stations, and IoT sensors. It can record a signal and replay it later. However, most modern car keys and garage doors use rolling codes that change with every press, so simple replay attacks don't work on them.\n\n**GPIO Pins**: Flipper has general-purpose input/output pins that let you connect external hardware — sensors, displays, WiFi boards, and more.\n\nAnother device worth knowing about is the M5Stack CardPuter — a tiny computer the size of a credit card with a keyboard, screen, and ESP32 chip. It can run WiFi deauthentication tools, BLE (Bluetooth Low Energy) scanners, and various hacking scripts. It's cheaper than a Flipper but requires more technical knowledge to set up.\n\n**LEGAL BOUNDARIES**: Owning a Flipper Zero is legal in most countries (Canada banned its sale briefly in 2024 but reversed the decision). However, using it on other people's property is illegal. Reading someone else's access card, opening someone else's garage door, or jamming radio signals are all crimes. Some airports have confiscated Flipper Zeros from travelers. The rule is simple: only use it on YOUR devices, YOUR cards, and YOUR property.",
+  "commands": [
+    {
+      "command": "hackeryoung@kali:~$ lsusb",
+      "description": "List all USB devices connected to your computer. If you have a Flipper Zero plugged in, it will appear as 'Flipper Devices Inc.' This confirms your computer recognizes the device.",
+      "expectedOutput": "hackeryoung@kali:~$ lsusb\nBus 001 Device 001: ID 1d6b:0002 Linux Foundation 2.0 root hub\nBus 001 Device 004: ID 0483:5740 Flipper Devices Inc. Flipper Zero\nBus 002 Device 001: ID 1d6b:0003 Linux Foundation 3.0 root hub",
+      "safety": "safe",
+      "troubleshooting": "If Flipper doesn't appear, try a different USB cable (some cables are charge-only and don't carry data). Also try a different USB port. The Flipper needs to be powered on and not in DFU mode.",
+      "legalNote": null
+    },
+    {
+      "command": "hackeryoung@kali:~$ pip3 install flipperzero-protobuf",
+      "description": "Install the Python library for communicating with Flipper Zero programmatically. This lets you write scripts that interact with the Flipper from your computer.",
+      "expectedOutput": "hackeryoung@kali:~$ pip3 install flipperzero-protobuf\nCollecting flipperzero-protobuf\n  Downloading flipperzero_protobuf-0.5.2-py3-none-any.whl (42 kB)\nInstalling collected packages: flipperzero-protobuf\nSuccessfully installed flipperzero-protobuf-0.5.2",
+      "safety": "safe",
+      "troubleshooting": "If pip3 is not found, install it with 'sudo apt install python3-pip'. If the package fails to install, try 'pip3 install --user flipperzero-protobuf'.",
+      "legalNote": null
+    },
+    {
+      "command": "hackeryoung@kali:~$ screen /dev/ttyACM0 115200",
+      "description": "Open a serial console to the Flipper Zero. This gives you a command-line interface to the Flipper where you can run commands, check storage, and interact with its features directly from your computer.",
+      "expectedOutput": "hackeryoung@kali:~$ screen /dev/ttyACM0 115200\n>: device_info\nHardware: Flipper Zero\nFirmware: 0.98.3\nRadio Stack: 1.19.0\nBuild Date: Oct 2026",
+      "safety": "safe",
+      "troubleshooting": "If /dev/ttyACM0 doesn't exist, check 'ls /dev/ttyACM*' or 'ls /dev/ttyUSB*'. You might need to add your user to the dialout group: 'sudo usermod -aG dialout hackeryoung' and then log out and back in. Press Ctrl+A then K to exit screen.",
+      "legalNote": null
+    },
+    {
+      "command": "hackeryoung@kali:~$ python3 -c \"import nfc; print('NFC module available')\"",
+      "description": "Check if the Python NFC library is available on your system. This library lets you interact with NFC readers (including Flipper Zero and standalone readers like ACR122U).",
+      "expectedOutput": "hackeryoung@kali:~$ python3 -c \"import nfc; print('NFC module available')\"\nNFC module available",
+      "safety": "safe",
+      "troubleshooting": "If you get 'ModuleNotFoundError', install it with 'pip3 install nfcpy'. You also need libusb: 'sudo apt install libusb-dev'. The nfcpy library supports many NFC readers beyond Flipper Zero.",
+      "legalNote": null
+    },
+    {
+      "command": "hackeryoung@kali:~$ rtl_433 -f 433920000 -R 0",
+      "description": "If you have an RTL-SDR dongle (a cheap ~$25 software-defined radio), this listens on 433.92 MHz for signals from weather stations, tire pressure sensors, garage door openers, and IoT devices near your home. The -R 0 flag decodes all known protocols.",
+      "expectedOutput": "hackeryoung@kali:~$ rtl_433 -f 433920000 -R 0\nrtl_433 version 23.11\nFound 1 device(s):\n  0:  Realtek, RTL2838UHIDIR, SN: 00000001\nUsing device 0: Generic RTL2832U OEM\n\ntime      : 2026-10-10 15:45:12\nmodel     : Acurite-Tower  id: 12345\nTemperature: 18.3 C   Humidity: 62 %\n\ntime      : 2026-10-10 15:45:18\nmodel     : TPMS          id: A1B2C3D4\nPressure  : 35.2 PSI   Temperature: 22.1 C",
+      "safety": "safe",
+      "troubleshooting": "Install rtl_433 with 'sudo apt install rtl-433'. If you get 'usb_claim_interface error', another program is using the dongle. Try 'sudo rmmod dvb_usb_rtl28xxu' to unload the TV driver that auto-claims RTL-SDR devices.",
+      "legalNote": null
+    },
+    {
+      "command": "hackeryoung@kali:~$ hcitool scan",
+      "description": "Scan for nearby Bluetooth devices. This is a basic Bluetooth discovery that shows device names and addresses. Similar to what Flipper Zero does with its Bluetooth module.",
+      "expectedOutput": "hackeryoung@kali:~$ hcitool scan\nScanning ...\n\t00:11:22:33:44:55\tLiving Room Speaker\n\t66:77:88:99:AA:BB\tSamsung TV\n\tCC:DD:EE:FF:00:11\tFitBit Charge 5",
+      "safety": "safe",
+      "troubleshooting": "If you get 'Device is not available', enable Bluetooth first: 'sudo hciconfig hci0 up'. If hcitool isn't installed, use 'sudo apt install bluez'. For BLE (Bluetooth Low Energy) devices, use 'sudo hcitool lescan' instead.",
+      "legalNote": null
+    }
+  ],
+  "challenge": {
+    "question": "Even without a Flipper Zero, you can explore hardware hacking concepts. Use hcitool to scan for Bluetooth devices in your home. How many did you find? Look up each device's MAC address prefix at macvendors.com — do the manufacturers match what you expected?",
+    "hint": "Run 'sudo hcitool scan' for classic Bluetooth and 'sudo hcitool lescan' for Bluetooth Low Energy (BLE). BLE will find many more devices — fitness trackers, smart bulbs, wireless earbuds. The first 3 bytes (6 hex characters) of each MAC address identify the manufacturer.",
+    "answer": "A typical home has 5-15 Bluetooth/BLE devices: phones, wireless headphones, smart speakers, fitness trackers, game controllers, smart TVs, and smart home devices. BLE scans often reveal devices you forgot about or didn't know were broadcasting. Each MAC prefix maps to a manufacturer — this is the same principle used in WiFi scanning to identify device types."
+  },
+  "realWorld": "In September 2023, a passenger at a Brazilian airport was detained after their Flipper Zero was confiscated by customs officials who believed it was a 'criminal hacking device.' Brazil's National Telecommunications Agency (Anatel) had temporarily banned Flipper Zero imports, claiming it could be used for criminal purposes. The ban caused international controversy among security researchers and was eventually lifted after the manufacturer demonstrated that the device cannot bypass modern security systems. Similar seizures have been reported at airports in Australia and Canada, highlighting the tension between security research tools and law enforcement understanding of technology.",
+  "funFact": "The Flipper Zero was funded on Kickstarter in 2020, raising $4.8 million — making it the most-funded cybersecurity product on the platform. The cute dolphin mascot was intentional: the creators wanted to make cybersecurity less intimidating and more playful. The dolphin on your Flipper's screen actually levels up and gets happier as you use different features of the device. It was inspired by Tamagotchi virtual pets from the 1990s — except instead of feeding a virtual pet, you're feeding it NFC cards and radio signals."
+}

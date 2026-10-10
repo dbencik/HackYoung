@@ -1,0 +1,84 @@
+{
+  "id": 17,
+  "slug": "how-websites-work",
+  "title": "How Websites Work",
+  "module": 5,
+  "moduleName": "Web & App Security",
+  "difficulty": "Hacker",
+  "objective": "Understand how HTTP requests and responses work, what status codes and cookies mean, and how to inspect web traffic using curl and browser dev tools.",
+  "legalWarning": "Only test websites and applications you own or have explicit permission to test. Unauthorized access to web applications is illegal.",
+  "explanation": "Every time you type a URL into your browser and hit Enter, a complex conversation happens between your computer and a web server — and it all happens in milliseconds. Understanding this conversation is the foundation of web security.\n\nHTTP (HyperText Transfer Protocol) is the language browsers and servers speak. When you visit a site, your browser sends an HTTP request with a method (GET for reading pages, POST for submitting forms), headers (metadata about your browser, cookies, what content you accept), and sometimes a body (like form data). The server responds with a status code (200 means OK, 404 means not found, 403 means forbidden, 500 means the server broke), headers, and the actual content — usually HTML, CSS, and JavaScript.\n\nStatus codes are grouped by their first digit: 1xx means 'hold on,' 2xx means 'here you go,' 3xx means 'go look somewhere else' (redirects), 4xx means 'you messed up,' and 5xx means 'I messed up.' As a hacker, you'll pay special attention to 401 (Unauthorized), 403 (Forbidden), and 500 (Internal Server Error) — these can reveal how a server handles security.\n\nCookies are small pieces of data that servers store in your browser. They're how websites remember you — your login session, your shopping cart, your preferences. Session cookies are especially important for security because they prove your identity after login. If someone steals your session cookie, they can impersonate you. This is called session hijacking.\n\nThe curl command lets you make HTTP requests from the terminal, and browser Developer Tools (press F12) let you see every request your browser makes in real time. Together, these are your primary tools for understanding web traffic. You'll use them to inspect headers, cookies, redirects, and response codes — all on your own local test server or sites you own.\n\nIn this lesson, we'll start a simple local web server using Python (already installed on Kali) and poke at it with curl and dev tools. Everything stays on your machine — no external targets.",
+  "commands": [
+    {
+      "command": "mkdir -p ~/web-lab && echo '<html><body><h1>HackerYoung Lab</h1><p>Welcome to your test site!</p></body></html>' > ~/web-lab/index.html",
+      "description": "Creates a local web lab directory and a simple HTML page. This is YOUR test website that you'll be inspecting — no external targets needed.",
+      "expectedOutput": "hackeryoung@kali:~$",
+      "safety": "safe",
+      "troubleshooting": "If mkdir says 'Permission denied,' check that you're in your home directory with 'cd ~' and try again.",
+      "legalNote": null
+    },
+    {
+      "command": "cd ~/web-lab && python3 -m http.server 8080 &",
+      "description": "Starts a simple Python web server on port 8080, serving your local HTML file. The '&' runs it in the background so you can keep using the terminal.",
+      "expectedOutput": "Serving HTTP on 0.0.0.0 port 8080 (http://0.0.0.0:8080/) ...",
+      "safety": "safe",
+      "troubleshooting": "If you get 'Address already in use,' another process is using port 8080. Try 'kill $(lsof -t -i:8080)' to free it, or use a different port like 8081.",
+      "legalNote": null
+    },
+    {
+      "command": "curl -v http://localhost:8080/",
+      "description": "Makes a verbose HTTP GET request to your local server. The -v flag shows the full request and response headers — this is how you see the HTTP conversation in action.",
+      "expectedOutput": "* Connected to localhost (127.0.0.1) port 8080\n> GET / HTTP/1.0\n> Host: localhost:8080\n> User-Agent: curl/8.5.0\n> Accept: */*\n>\n< HTTP/1.0 200 OK\n< Server: SimpleHTTP/0.6 Python/3.12.1\n< Date: ...\n< Content-type: text/html\n< Content-Length: 83\n<\n<html><body><h1>HackerYoung Lab</h1><p>Welcome to your test site!</p></body></html>",
+      "safety": "safe",
+      "troubleshooting": "If you get 'Connection refused,' the Python server isn't running. Go back and start it with the previous command. Check with 'jobs' to see background processes.",
+      "legalNote": null
+    },
+    {
+      "command": "curl -I http://localhost:8080/",
+      "description": "Sends a HEAD request, which only returns the response headers without the body. Great for quickly checking status codes, server info, and content types.",
+      "expectedOutput": "HTTP/1.0 200 OK\nServer: SimpleHTTP/0.6 Python/3.12.1\nDate: Sat, 10 Oct 2026 12:00:00 GMT\nContent-type: text/html\nContent-Length: 83",
+      "safety": "safe",
+      "troubleshooting": "If you see a 404 status, make sure index.html exists in ~/web-lab/ — check with 'ls ~/web-lab/'.",
+      "legalNote": null
+    },
+    {
+      "command": "curl -o /dev/null -s -w \"HTTP Status: %{http_code}\\nTime: %{time_total}s\\nSize: %{size_download} bytes\\n\" http://localhost:8080/",
+      "description": "Measures your server's response time, status code, and download size. The -w flag lets you format custom output — useful for performance testing.",
+      "expectedOutput": "HTTP Status: 200\nTime: 0.002s\nSize: 83 bytes",
+      "safety": "safe",
+      "troubleshooting": "If HTTP Status shows 000, the server is not running. Restart it with 'cd ~/web-lab && python3 -m http.server 8080 &'.",
+      "legalNote": null
+    },
+    {
+      "command": "curl http://localhost:8080/nonexistent-page",
+      "description": "Requests a page that doesn't exist. You should get a 404 error — this is how you learn what error responses look like and what information the server reveals in error messages.",
+      "expectedOutput": "<!DOCTYPE HTML>\n<html lang=\"en\">\n<head><title>Error response</title></head>\n<body><h1>Error response</h1><p>Error code: 404</p><p>Message: File not found.</p></body></html>",
+      "safety": "safe",
+      "troubleshooting": "If you get a 200 OK instead of 404, your server may have a custom error handler. That's fine for learning — the key is noticing the different status codes.",
+      "legalNote": null
+    },
+    {
+      "command": "curl -b \"session=abc123; user=hackeryoung\" -v http://localhost:8080/",
+      "description": "Sends a request with custom cookies attached. This simulates how a browser sends cookies to a server. Notice the 'Cookie:' header in the request output.",
+      "expectedOutput": "> Cookie: session=abc123; user=hackeryoung",
+      "safety": "safe",
+      "troubleshooting": null,
+      "legalNote": null
+    },
+    {
+      "command": "kill $(jobs -p) 2>/dev/null; echo 'Server stopped.'",
+      "description": "Stops the background Python web server. Always clean up after yourself — leaving servers running wastes resources and could be a security risk.",
+      "expectedOutput": "Server stopped.",
+      "safety": "safe",
+      "troubleshooting": "If it says 'No such process,' the server already stopped. That's fine — you're just cleaning up.",
+      "legalNote": null
+    }
+  ],
+  "challenge": {
+    "question": "You run 'curl -I http://localhost:8080/admin' and get a 403 Forbidden response. What does this tell you about the server?",
+    "hint": "Think about the difference between 404 (not found) and 403 (forbidden). What does a 403 reveal that a 404 doesn't?",
+    "answer": "A 403 Forbidden means the /admin page EXISTS but you're not allowed to access it. This is actually an information leak — a 404 would hide whether the page exists at all. Attackers use this difference to discover hidden admin panels. A well-configured server should return 404 for unauthorized paths to avoid revealing its structure."
+  },
+  "realWorld": "In 2017, a security researcher discovered that Equifax's admin portal was accessible at a predictable URL and was protected with the default credentials admin/admin. This contributed to one of the largest data breaches in history, exposing personal data of 147 million people. Understanding how websites work — including their hidden endpoints — is the first step in securing them.",
+  "funFact": "HTTP status code 418 'I'm a Teapot' is a real status code defined in RFC 2324 as an April Fool's joke in 1998. It was meant for a Hyper Text Coffee Pot Control Protocol. Google actually implemented it — try visiting google.com/teapot!"
+}

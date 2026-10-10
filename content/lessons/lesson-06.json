@@ -1,0 +1,76 @@
+{
+  "id": 6,
+  "slug": "dns-the-internets-phone-book",
+  "title": "DNS — The Internet's Phone Book",
+  "module": 2,
+  "moduleName": "Network Fundamentals",
+  "difficulty": "Script Kiddie",
+  "objective": "Understand how DNS translates domain names to IP addresses and learn to query DNS records using command-line tools.",
+  "legalWarning": "DNS reconnaissance tools in this lesson must ONLY be used to query public DNS information or your own domains. Using DNS tools to gather intelligence about organizations you intend to attack is illegal.",
+  "explanation": "You type 'google.com' into your browser and a webpage appears. But computers don't understand words — they need numbers. So how does 'google.com' become 142.250.80.46? That's the job of DNS — the Domain Name System.\n\nDNS is often called the phone book of the internet, but it's more like a chain of phone books. When you type a website address, here's what happens behind the scenes: First, your computer checks its own local cache — have you visited this site recently? If yes, it already knows the IP. If not, it asks your router. Your router checks its cache too. If the router doesn't know, it asks your ISP's DNS server. If your ISP doesn't know, the request travels up to the root DNS servers (there are only 13 groups of these in the entire world), which direct the query to the right top-level domain server (.com, .org, .net), which finally points to the authoritative DNS server for that specific domain. The answer flows back down the chain, and everyone caches it for next time.\n\nDNS records come in several types. 'A' records map a domain to an IPv4 address. 'AAAA' records map to IPv6. 'MX' records point to mail servers. 'CNAME' records are aliases (www.example.com might be a CNAME pointing to example.com). 'TXT' records hold arbitrary text, often used for email authentication or domain verification. 'NS' records identify which DNS servers are authoritative for a domain.\n\nWhy should hackers care about DNS? Because DNS is one of the richest sources of intelligence in reconnaissance. By querying a target's DNS records, you can discover their mail servers, subdomains, hosting providers, and sometimes internal infrastructure that was accidentally exposed. This is all PUBLIC information — querying DNS is like looking up a business in the phone book. But here's the dark side: DNS poisoning (also called DNS spoofing) is an attack where someone corrupts DNS caches to redirect traffic to malicious servers. Imagine if someone changed the phone book so that your bank's phone number actually connected you to a scammer. That's DNS poisoning. Understanding how DNS works is the first step to defending against these attacks.",
+  "commands": [
+    {
+      "command": "nslookup google.com",
+      "description": "Queries DNS to find the IP address of google.com. This is the simplest DNS lookup tool and comes pre-installed on almost every operating system.",
+      "expectedOutput": "Server:\t\t192.168.1.1\nAddress:\t192.168.1.1#53\n\nNon-authoritative answer:\nName:\tgoogle.com\nAddress: 142.250.80.46",
+      "safety": "safe",
+      "troubleshooting": "If you get 'connection timed out', your DNS server might be unreachable. Try 'nslookup google.com 8.8.8.8' to use Google's public DNS server directly.",
+      "legalNote": null
+    },
+    {
+      "command": "dig google.com",
+      "description": "A more detailed DNS lookup tool preferred by security professionals. Shows the query, answer, authority section, and timing information. Much more verbose than nslookup.",
+      "expectedOutput": "; <<>> DiG 9.18.24 <<>> google.com\n;; ANSWER SECTION:\ngoogle.com.\t\t300\tIN\tA\t142.250.80.46\n\n;; Query time: 12 msec\n;; SERVER: 192.168.1.1#53(192.168.1.1)\n;; WHEN: Sat Oct 10 14:30:00 UTC 2026",
+      "safety": "safe",
+      "troubleshooting": "If 'dig' is not found, install it with 'sudo apt install dnsutils'. On some systems it's part of the 'bind9-utils' package.",
+      "legalNote": null
+    },
+    {
+      "command": "dig google.com MX",
+      "description": "Queries for MX (Mail Exchange) records — shows which servers handle email for google.com. In penetration testing, finding mail servers reveals potential attack surfaces.",
+      "expectedOutput": ";; ANSWER SECTION:\ngoogle.com.\t\t600\tIN\tMX\t10 smtp.google.com.\ngoogle.com.\t\t600\tIN\tMX\t20 smtp2.google.com.",
+      "safety": "safe",
+      "troubleshooting": null,
+      "legalNote": null
+    },
+    {
+      "command": "dig google.com NS",
+      "description": "Queries for NS (Name Server) records — shows which DNS servers are authoritative for google.com. This reveals the DNS infrastructure behind a domain.",
+      "expectedOutput": ";; ANSWER SECTION:\ngoogle.com.\t\t21600\tIN\tNS\tns1.google.com.\ngoogle.com.\t\t21600\tIN\tNS\tns2.google.com.\ngoogle.com.\t\t21600\tIN\tNS\tns3.google.com.\ngoogle.com.\t\t21600\tIN\tNS\tns4.google.com.",
+      "safety": "safe",
+      "troubleshooting": "If you get SERVFAIL, the DNS server itself is having issues. Try querying a different server: 'dig @8.8.8.8 google.com NS'.",
+      "legalNote": null
+    },
+    {
+      "command": "cat /etc/resolv.conf",
+      "description": "Shows your system's DNS configuration — which DNS servers your machine is currently using. If this points to a suspicious server, your DNS might be compromised.",
+      "expectedOutput": "# Generated by NetworkManager\nnameserver 192.168.1.1",
+      "safety": "safe",
+      "troubleshooting": "If this file is empty or missing, DNS won't work. Add a nameserver by running: 'echo \"nameserver 8.8.8.8\" | sudo tee /etc/resolv.conf'.",
+      "legalNote": null
+    },
+    {
+      "command": "host -t TXT google.com",
+      "description": "Queries TXT records for a domain. TXT records often contain SPF (email sender verification), DKIM keys, and domain verification tokens. These can leak information about what services a company uses.",
+      "expectedOutput": "google.com descriptive text \"v=spf1 include:_spf.google.com ~all\"\ngoogle.com descriptive text \"globalsign-smime-dv=CDYX+XFHUw2wml6/Gb8+59BsH31KzUr6c1l2BPvqKX8=\"",
+      "safety": "safe",
+      "troubleshooting": "If you see no TXT records, the domain might not have any configured. This is normal for many domains.",
+      "legalNote": null
+    },
+    {
+      "command": "dig +short google.com",
+      "description": "A quick version of dig that only shows the answer — just the IP address, no extra information. Useful for scripting or when you just need the IP fast.",
+      "expectedOutput": "142.250.80.46",
+      "safety": "safe",
+      "troubleshooting": null,
+      "legalNote": null
+    }
+  ],
+  "challenge": {
+    "question": "You run 'cat /etc/resolv.conf' and see 'nameserver 185.228.168.9' instead of your router's IP. You didn't set this. Should you be concerned?",
+    "hint": "Your DNS server controls which IP addresses your computer connects to when you type domain names. If someone changed it without your knowledge...",
+    "answer": "Yes, you should be concerned! If you didn't change your DNS server, someone (or malware) might have modified it. A malicious DNS server could redirect you to fake versions of banking sites, email providers, or social media — even though you typed the correct URL. The IP 185.228.168.9 happens to be CleanBrowsing (a legitimate filtering DNS), but you should always know WHY your DNS was changed. Check for malware and reset it to your router's IP or a trusted DNS like 8.8.8.8 (Google) or 1.1.1.1 (Cloudflare)."
+  },
+  "realWorld": "In 2018, a massive DNS hijacking campaign called 'Sea Turtle' targeted government organizations, energy companies, and intelligence agencies across the Middle East and North Africa. The attackers compromised DNS registrars and modified DNS records so that traffic to legitimate government websites was redirected through servers the attackers controlled. They intercepted login credentials for email systems and VPNs. The campaign was attributed to a state-sponsored threat actor and demonstrated how attacking DNS infrastructure can compromise an entire country's communications.",
+  "funFact": "The entire internet depends on just 13 root DNS server addresses (named A through M). But don't worry — there aren't really just 13 physical servers. Through a technique called 'anycast,' there are actually over 1,700 physical root server instances spread across the globe. If you're in Tokyo, your query goes to a nearby copy; if you're in London, it goes to a different copy. The system has been running since 1985 and has never completely failed."
+}

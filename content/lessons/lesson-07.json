@@ -1,0 +1,68 @@
+{
+  "id": 7,
+  "slug": "tcp-udp-and-ports",
+  "title": "TCP, UDP & Ports",
+  "module": 2,
+  "moduleName": "Network Fundamentals",
+  "difficulty": "Script Kiddie",
+  "objective": "Understand how TCP and UDP connections work, learn common port numbers, and inspect active connections on your own system.",
+  "legalWarning": "Port scanning commands in this lesson must ONLY be used on your own machines and networks. Scanning ports on systems you do not own is considered unauthorized access in most jurisdictions and can result in criminal prosecution.",
+  "explanation": "Imagine your computer is an apartment building. The IP address is the street address — it gets the mail to the right building. But the building has hundreds of apartments. How does a delivery know which apartment to go to? That's what ports are — apartment numbers for network services.\n\nEvery network service runs on a specific port number, from 0 to 65535. Some are standardized and well-known: port 80 is HTTP (unencrypted web traffic), port 443 is HTTPS (encrypted web), port 22 is SSH (secure remote access), port 53 is DNS, port 21 is FTP (file transfer), and port 25 is SMTP (email). When you visit a website, your browser connects to port 443 on the web server. When you SSH into a server, you connect to port 22. Ports 0-1023 are called 'well-known ports' and usually require root privileges to open.\n\nNow, HOW that data gets delivered matters too. There are two main transport protocols: TCP and UDP. TCP (Transmission Control Protocol) is like sending a registered letter — it guarantees delivery, maintains order, and confirms receipt. Before any data is sent, TCP does a 'three-way handshake': your computer sends a SYN (synchronize) packet, the server replies with SYN-ACK (acknowledge), and your computer sends ACK back. Only then does data flow. If a packet is lost, TCP automatically resends it. This is used for web browsing, email, file transfers — anything where accuracy matters.\n\nUDP (User Datagram Protocol) is like throwing postcards into the wind. It's faster because there's no handshake and no delivery confirmation, but packets can arrive out of order or not at all. This is used for video streaming, online gaming, DNS queries, and VoIP calls — situations where speed matters more than perfection. A few dropped frames in a video call is fine; waiting for retransmission would be worse.\n\nFor hackers, open ports are doors into a system. An open port means a service is running and potentially vulnerable. That's why port scanning (checking which ports are open on a target) is one of the first things a penetration tester does. But remember — you should only scan YOUR OWN systems. Scanning someone else's ports without permission is illegal.",
+  "commands": [
+    {
+      "command": "ss -tuln",
+      "description": "Shows all TCP (-t) and UDP (-u) listening (-l) ports with numeric addresses (-n). This tells you what services are running on YOUR machine right now.",
+      "expectedOutput": "Netid  State   Recv-Q  Send-Q  Local Address:Port   Peer Address:Port\ntcp    LISTEN  0       128     0.0.0.0:22            0.0.0.0:*\ntcp    LISTEN  0       5       127.0.0.1:631         0.0.0.0:*\nudp    UNCONN  0       0       0.0.0.0:68            0.0.0.0:*",
+      "safety": "safe",
+      "troubleshooting": "If ss is not available, use 'netstat -tuln' instead (older systems). Install netstat with 'sudo apt install net-tools' if needed.",
+      "legalNote": null
+    },
+    {
+      "command": "netstat -tuln",
+      "description": "The classic command for viewing listening ports. -t shows TCP, -u shows UDP, -l shows only listening sockets, -n shows numeric addresses instead of resolving hostnames.",
+      "expectedOutput": "Active Internet connections (only servers)\nProto Recv-Q Send-Q Local Address           Foreign Address         State\ntcp        0      0 0.0.0.0:22              0.0.0.0:*               LISTEN\ntcp        0      0 127.0.0.1:631           0.0.0.0:*               LISTEN\nudp        0      0 0.0.0.0:68              0.0.0.0:*",
+      "safety": "safe",
+      "troubleshooting": "If 'netstat' is not found, install it with 'sudo apt install net-tools'. On newer systems, 'ss' is the recommended replacement.",
+      "legalNote": null
+    },
+    {
+      "command": "ss -tunp",
+      "description": "Shows active TCP/UDP connections with the process name (-p) that owns each connection. Requires sudo for full process info. This reveals which programs are communicating over the network.",
+      "expectedOutput": "Netid State  Recv-Q Send-Q Local Address:Port   Peer Address:Port  Process\ntcp   ESTAB  0      0      192.168.1.100:45678  142.250.80.46:443  users:((\"firefox\",pid=1234,fd=42))",
+      "safety": "safe",
+      "troubleshooting": "If the Process column is empty, run with 'sudo ss -tunp' — you need root privileges to see process information for other users.",
+      "legalNote": null
+    },
+    {
+      "command": "nmap -sT -p 22,80,443 127.0.0.1",
+      "description": "Scans your own machine (localhost) for three common ports using a TCP connect scan. This checks if SSH (22), HTTP (80), or HTTPS (443) services are running on your Kali box.",
+      "expectedOutput": "Starting Nmap 7.94 ( https://nmap.org )\nNmap scan report for localhost (127.0.0.1)\nPORT    STATE  SERVICE\n22/tcp  open   ssh\n80/tcp  closed http\n443/tcp closed https\nNmap done: 1 IP address (1 host up) scanned in 0.05 seconds",
+      "safety": "restricted",
+      "troubleshooting": "If all ports show as 'filtered', a firewall might be blocking the scan. Since this is your own machine, you can temporarily check with 'sudo iptables -L' to see firewall rules.",
+      "legalNote": "This scan targets 127.0.0.1 (your own machine). NEVER change this IP to scan someone else's system without written authorization. Port scanning others is illegal."
+    },
+    {
+      "command": "nmap -sT -p 1-1000 192.168.1.0/24",
+      "description": "Scans the first 1000 ports on all devices in your home network. This finds web servers, SSH services, printers, and other services running on devices you own.",
+      "expectedOutput": "Nmap scan report for 192.168.1.1\nPORT    STATE SERVICE\n53/tcp  open  domain\n80/tcp  open  http\n443/tcp open  https\n\nNmap scan report for 192.168.1.100\nPORT   STATE SERVICE\n22/tcp open  ssh",
+      "safety": "restricted",
+      "troubleshooting": "This scan can take several minutes on a /24 network. If it's too slow, reduce the port range: '-p 22,80,443,8080' to check only specific ports.",
+      "legalNote": "ONLY run this on YOUR home network (the 192.168.x.x network behind your own router). Scanning any other network — even your school or a friend's house — is illegal without written permission from the network owner."
+    },
+    {
+      "command": "cat /etc/services | head -30",
+      "description": "Shows the first 30 entries from the services file — a database mapping port numbers to service names. This file is how Linux knows that port 22 is SSH and port 80 is HTTP.",
+      "expectedOutput": "# /etc/services\ntcpmux\t\t1/tcp\necho\t\t7/tcp\necho\t\t7/udp\nftp-data\t20/tcp\nftp\t\t21/tcp\nssh\t\t22/tcp\ntelnet\t\t23/tcp\nsmtp\t\t25/tcp\ndomain\t\t53/tcp\ndomain\t\t53/udp\nhttp\t\t80/tcp",
+      "safety": "safe",
+      "troubleshooting": null,
+      "legalNote": null
+    }
+  ],
+  "challenge": {
+    "question": "You run 'ss -tuln' on your Kali machine and see port 4444 listening. You didn't start any service on that port. Port 4444 is the default port for Metasploit's reverse shell. Should you be worried?",
+    "hint": "An unexpected open port means something is running that you didn't start. Port 4444 is commonly associated with hacking tools and malware.",
+    "answer": "Yes, this is a red flag! Port 4444 is the default port for Metasploit's Meterpreter reverse shell — a tool used by both penetration testers and malicious hackers. If you didn't intentionally start Metasploit, something else opened that port. Run 'sudo ss -tunp | grep 4444' to find which process is using it, then investigate. It could be malware, an accidental Metasploit instance left running, or another tool using that port. Never ignore unexpected open ports."
+  },
+  "realWorld": "In 2017, the Equifax data breach exposed personal data of 147 million Americans — Social Security numbers, birth dates, addresses, and driver's license numbers. The attackers exploited a known vulnerability in Apache Struts, a web application running on port 443. Equifax had failed to patch the vulnerability for over two months after it was publicly disclosed. The breach led to a $700 million settlement. It all started with one unpatched service on one open port.",
+  "funFact": "Port 0 technically exists but is reserved and should never be used. However, hackers sometimes use port 0 in scanning because some operating systems respond to port 0 probes in unique ways, allowing attackers to fingerprint the OS. Meanwhile, the highest port number is 65535 (2^16 - 1). Some malware deliberately uses very high port numbers (like 65534) hoping that security tools won't check that high."
+}

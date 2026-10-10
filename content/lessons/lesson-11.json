@@ -1,0 +1,68 @@
+{
+  "id": 11,
+  "slug": "os-fingerprinting",
+  "title": "OS Fingerprinting",
+  "module": 3,
+  "moduleName": "Scanning & Reconnaissance",
+  "difficulty": "Apprentice",
+  "objective": "Learn how nmap detects operating systems remotely using TCP/IP stack analysis and TTL values.",
+  "legalWarning": "Only scan networks and devices you own. Scanning others' networks without permission is illegal under the Computer Fraud and Abuse Act (US), Computer Misuse Act (UK), and similar laws worldwide. Penalties include fines and prison.",
+  "explanation": "Every operating system has a personality — a unique way it handles network traffic. Just like you can recognize your friends by how they walk, nmap can identify operating systems by how they respond to network packets. This technique is called OS fingerprinting.\n\nWhen nmap sends specially crafted packets to a device, each OS responds slightly differently. Windows, Linux, macOS, and even your smart fridge's embedded OS all have tiny quirks in how they build their TCP/IP packets. nmap compares these quirks against a database of over 5,600 known OS fingerprints.\n\nOne of the simplest giveaways is the TTL (Time To Live) value. Every packet sent across a network has a TTL — a number that decreases by 1 each time the packet passes through a router. Different operating systems set different starting TTL values:\n- **Linux**: TTL = 64\n- **Windows**: TTL = 128\n- **macOS/iOS**: TTL = 64\n- **Cisco routers**: TTL = 255\n\nSo if you ping a device and see a TTL of 127, it's probably a Windows machine one router hop away (128 - 1 = 127). Simple, but surprisingly effective.\n\nnmap's OS detection (-O flag) goes much deeper than TTL. It analyzes things like TCP window sizes, how the device handles fragmented packets, the order of TCP options, and dozens of other subtle behaviors. It then gives you a confidence percentage — 'Running: Linux 5.x (95% confidence)' means nmap is pretty sure but not certain.\n\nWhy does OS detection matter for security? Different operating systems have different vulnerabilities. A Windows Server 2012 has completely different security holes than an Ubuntu 22.04 box. Knowing the OS lets a pentester (or an attacker) narrow down which exploits might work. It's like knowing whether a lock is a deadbolt or a padlock before trying to pick it.\n\nOS fingerprinting requires root/sudo privileges because nmap needs to craft raw packets — something regular users aren't allowed to do. If you run nmap -O without sudo, it will complain.",
+  "commands": [
+    {
+      "command": "sudo nmap -O 192.168.1.1",
+      "description": "Run an OS detection scan on your router. This sends special probes and analyzes the responses to guess the operating system. Requires sudo.",
+      "expectedOutput": "Starting Nmap 7.94 ( https://nmap.org )\nNmap scan report for 192.168.1.1\nHost is up (0.0019s latency).\nNot shown: 996 closed tcp ports\nPORT    STATE SERVICE\n22/tcp  open  ssh\n53/tcp  open  domain\n80/tcp  open  http\n443/tcp open  https\nDevice type: general purpose\nRunning: Linux 4.X|5.X\nOS CPE: cpe:/o:linux:linux_kernel:4 cpe:/o:linux:linux_kernel:5\nOS details: Linux 4.15 - 5.8\nNetwork Distance: 1 hop\n\nOS detection performed. Please report any incorrect results at https://nmap.org/submit/\nNmap done: 1 IP address (1 host up) scanned in 3.72 seconds",
+      "safety": "restricted",
+      "troubleshooting": "If nmap says 'Too many fingerprints match this host to give specific OS details', the device might be behind a firewall or have unusual network settings. Try adding '--osscan-guess' to force nmap to give its best guess.",
+      "legalNote": "Only run this on YOUR home network. Scanning other networks is illegal."
+    },
+    {
+      "command": "sudo nmap -O --osscan-guess 192.168.1.1",
+      "description": "Force nmap to give its best OS guess even when it's not confident. Shows percentage confidence for each possible match.",
+      "expectedOutput": "Aggressive OS guesses: Linux 5.4 (96%), Linux 4.15 (93%), Linux 5.0 - 5.5 (91%), OpenWrt 21.02 (88%)\nNo exact OS matches for host (If you know what OS is running on it, see https://nmap.org/submit/).",
+      "safety": "restricted",
+      "troubleshooting": "Low confidence percentages (below 85%) usually mean the device has a customized or unusual TCP stack. Routers running OpenWrt or DD-WRT can be tricky to identify.",
+      "legalNote": "Only run this on YOUR home network. Scanning other networks is illegal."
+    },
+    {
+      "command": "ping -c 4 192.168.1.1",
+      "description": "Ping your router and check the TTL value in the response. The TTL reveals the operating system — Linux/macOS typically use 64, Windows uses 128, Cisco uses 255.",
+      "expectedOutput": "PING 192.168.1.1 (192.168.1.1) 56(84) bytes of data.\n64 bytes from 192.168.1.1: icmp_seq=1 ttl=64 time=2.13 ms\n64 bytes from 192.168.1.1: icmp_seq=2 ttl=64 time=1.87 ms\n64 bytes from 192.168.1.1: icmp_seq=3 ttl=64 time=1.92 ms\n64 bytes from 192.168.1.1: icmp_seq=4 ttl=64 time=2.01 ms\n\n--- 192.168.1.1 ping statistics ---\n4 packets transmitted, 4 received, 0% packet loss, time 3005ms\nrtt min/avg/max/mdev = 1.870/1.982/2.130/0.094 ms",
+      "safety": "restricted",
+      "troubleshooting": "If ping returns 'Destination Host Unreachable', the device might block ICMP (ping) requests. Many firewalls drop ping packets for security. This doesn't mean the device is offline — try an nmap scan instead.",
+      "legalNote": "Only run this on YOUR home network. Scanning other networks is illegal."
+    },
+    {
+      "command": "sudo nmap -A 192.168.1.1",
+      "description": "Run an aggressive scan that combines OS detection (-O), service detection (-sV), script scanning (-sC), and traceroute all in one. This is the 'tell me everything' option.",
+      "expectedOutput": "Starting Nmap 7.94 ( https://nmap.org )\nNmap scan report for 192.168.1.1\nPORT    STATE SERVICE  VERSION\n22/tcp  open  ssh      OpenSSH 8.9p1 Ubuntu 3ubuntu0.1\n| ssh-hostkey:\n|   256 a1:b2:c3:d4:e5:f6 (ECDSA)\n|_  256 aa:bb:cc:dd:ee:ff (ED25519)\n80/tcp  open  http     lighttpd 1.4.59\n|_http-title: Router Admin Panel\nDevice type: general purpose\nRunning: Linux 5.X\nOS details: Linux 5.4 - 5.15\nTraceroute: 1 hop (1.89 ms)\n\nNmap done: 1 IP address (1 host up) scanned in 15.37 seconds",
+      "safety": "restricted",
+      "troubleshooting": "The -A flag is noisy and slow. It's great for learning but in professional pentesting, you'd run each component separately for more control. If it takes too long, scan specific ports with '-p' first.",
+      "legalNote": "Only run this on YOUR home network. Scanning other networks is illegal."
+    },
+    {
+      "command": "sudo nmap -O 192.168.1.0/24",
+      "description": "Scan your entire home network for OS detection. This reveals what operating systems all your connected devices are running.",
+      "expectedOutput": "Nmap scan report for 192.168.1.1\nRunning: Linux 5.X\nOS details: Linux 5.4 (OpenWrt router)\n\nNmap scan report for 192.168.1.50\nRunning: Linux 4.X\nOS details: Linux 4.9 (Android 10)\n\nNmap scan report for 192.168.1.105\nRunning: Linux 5.X\nOS details: Linux 5.15\n\nNmap scan report for 192.168.1.120\nRunning: Apple iOS 15.X|macOS 12.X\nOS details: Apple iOS 15 or macOS 12 Monterey\n\nNmap done: 256 IP addresses (4 hosts up) scanned in 28.41 seconds",
+      "safety": "restricted",
+      "troubleshooting": "OS detection on a full subnet takes much longer than a basic scan. Be patient — it can take 30-60 seconds. If some devices show 'OS detection unreliable', those devices may have firewall rules blocking the probes nmap needs.",
+      "legalNote": "Only run this on YOUR home network. Scanning other networks is illegal."
+    },
+    {
+      "command": "traceroute 192.168.1.1",
+      "description": "Trace the route packets take to reach a device. Each hop shows the TTL decrementing. Useful for understanding network topology and confirming the number of hops for TTL-based OS guessing.",
+      "expectedOutput": "traceroute to 192.168.1.1 (192.168.1.1), 30 hops max, 60 byte packets\n 1  192.168.1.1 (192.168.1.1)  1.923 ms  1.854 ms  1.791 ms",
+      "safety": "restricted",
+      "troubleshooting": "If you see '* * *' for a hop, that router is blocking traceroute probes. This is common for ISP routers. Try 'traceroute -I' (uses ICMP instead of UDP) or 'traceroute -T' (uses TCP).",
+      "legalNote": "Only run this on YOUR home network. Scanning other networks is illegal."
+    }
+  ],
+  "challenge": {
+    "question": "Ping three different devices on your home network and note the TTL values. Can you guess each device's OS from the TTL alone? Then verify with 'sudo nmap -O' — how accurate was your TTL-based guess?",
+    "hint": "Remember: TTL 64 = Linux/macOS/Android, TTL 128 = Windows, TTL 255 = network equipment. Subtract 1 for each router hop between you and the device. On your home network, devices are usually 0-1 hops away.",
+    "answer": "On a typical home network, your router shows TTL 64 (Linux-based firmware), Windows PCs show TTL 128, phones show TTL 64 (Android is Linux-based, iOS uses 64 too). The nmap -O scan should confirm these guesses, though it provides much more specific details like kernel versions."
+  },
+  "realWorld": "In 2016, the Mirai botnet used OS fingerprinting to specifically target Linux-based IoT devices (cameras, routers, DVRs) running BusyBox. By identifying the OS, the malware knew which default credentials to try. Mirai infected over 600,000 devices and launched the largest DDoS attack in history at that time, taking down major websites including Twitter, Netflix, and Reddit for an entire day.",
+  "funFact": "Your operating system's TTL value was never meant to be a security feature — it was designed in the 1980s purely to prevent packets from looping forever in the network. The fact that different OSes chose different default TTL values (64 vs 128 vs 255) was an accident of history, but hackers have been exploiting this 'leak' for decades. Some security-conscious admins deliberately change their TTL values to confuse fingerprinting tools."
+}

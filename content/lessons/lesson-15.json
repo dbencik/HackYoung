@@ -1,0 +1,68 @@
+{
+  "id": 15,
+  "slug": "securing-your-home-router",
+  "title": "Securing Your Home Router",
+  "module": 4,
+  "moduleName": "WiFi & Wireless Security",
+  "difficulty": "Apprentice",
+  "objective": "Learn how to harden your home router by changing default credentials, disabling insecure features, enabling MAC filtering, and keeping firmware updated.",
+  "legalWarning": "Only scan networks and devices you own. Scanning others' networks without permission is illegal under the Computer Fraud and Abuse Act (US), Computer Misuse Act (UK), and similar laws worldwide. Penalties include fines and prison.",
+  "explanation": "You've spent the last few lessons learning how to scan networks and WiFi traffic. Now it's time to flip the script — instead of thinking like an attacker, think like a defender. Your home router is the front door to your entire network, and most people leave it wide open.\n\nHere's the scary truth: most home routers ship with default admin credentials like admin/admin or admin/password. That means anyone who connects to your WiFi (or in some cases, anyone on the internet) can log into your router's control panel and change anything — redirect your traffic, spy on your browsing, or add their own devices.\n\nLet's fix that. Here's your router hardening checklist:\n\n**1. Change the admin password.** This is the most critical step. The admin password is NOT your WiFi password — it's the password to the router's settings page. Most people never change it from the default.\n\n**2. Update your WiFi password.** Use WPA2 or WPA3 with a strong password (at least 12 characters, mix of letters, numbers, symbols). Never use WEP.\n\n**3. Disable WPS (WiFi Protected Setup).** WPS lets you connect devices by pressing a button or entering an 8-digit PIN. The PIN method is catastrophically broken — it can be brute-forced in hours because the 8-digit PIN is actually checked as two 4-digit halves, reducing the combinations from 100 million to just 11,000.\n\n**4. Enable MAC filtering.** Every device has a unique MAC address. You can tell your router to only allow specific MAC addresses to connect. This isn't bulletproof (MAC addresses can be spoofed), but it adds a layer of defense.\n\n**5. Set up a guest network.** Create a separate WiFi network for visitors and IoT devices. This isolates them from your main network so a compromised smart bulb can't access your laptop.\n\n**6. Update the firmware.** Router manufacturers release security patches, but routers don't auto-update like phones. You need to manually check for and install updates. Some routers haven't been updated in years and have known, exploitable vulnerabilities.\n\n**7. Disable remote management.** Unless you specifically need to access your router from outside your home, turn off remote administration. This closes a major attack surface.\n\nAccessing your router is usually as simple as typing its IP address (192.168.1.1 or 192.168.0.1) into a web browser. Let's walk through the process.",
+  "commands": [
+    {
+      "command": "ip route | grep default",
+      "description": "Find your router's IP address (default gateway). This is the address you'll type into your browser to access the admin panel.",
+      "expectedOutput": "hackeryoung@kali:~$ ip route | grep default\ndefault via 192.168.1.1 dev eth0 proto dhcp metric 100",
+      "safety": "active",
+      "troubleshooting": "The IP after 'via' is your router. Common defaults are 192.168.1.1, 192.168.0.1, or 10.0.0.1. If this command returns nothing, try 'ip route show' to see all routes.",
+      "legalNote": null
+    },
+    {
+      "command": "nmap -sV -p 80,443,8080,8443 192.168.1.1",
+      "description": "Check which web ports are open on your router. The admin panel typically runs on port 80 (HTTP) or 443 (HTTPS). Some routers use 8080 or 8443 for the admin interface.",
+      "expectedOutput": "hackeryoung@kali:~$ nmap -sV -p 80,443,8080,8443 192.168.1.1\nPORT     STATE  SERVICE  VERSION\n80/tcp   open   http     lighttpd 1.4.59\n443/tcp  open   ssl/http lighttpd 1.4.59\n8080/tcp closed http-proxy\n8443/tcp closed https-alt",
+      "safety": "active",
+      "troubleshooting": "If both 80 and 443 are closed, your router's admin panel might be on a non-standard port. Check the router's manual or try common alternatives: 8080, 8443, 8888, or 9090.",
+      "legalNote": null
+    },
+    {
+      "command": "curl -I http://192.168.1.1",
+      "description": "Check the HTTP headers of your router's web interface. This often reveals the router model and firmware version — useful for checking if updates are available.",
+      "expectedOutput": "hackeryoung@kali:~$ curl -I http://192.168.1.1\nHTTP/1.1 200 OK\nServer: lighttpd/1.4.59\nContent-Type: text/html; charset=UTF-8\nX-Frame-Options: SAMEORIGIN\nContent-Security-Policy: default-src 'self'\nDate: Sat, 10 Oct 2026 15:30:22 GMT",
+      "safety": "active",
+      "troubleshooting": "If you get a redirect to HTTPS, try 'curl -Ik https://192.168.1.1' (the -k flag ignores SSL certificate warnings, which is fine for your own router's self-signed cert).",
+      "legalNote": null
+    },
+    {
+      "command": "arp -a",
+      "description": "List all devices your machine knows about on the local network. Shows IP addresses and MAC addresses. Use this to create your MAC filtering allowlist.",
+      "expectedOutput": "hackeryoung@kali:~$ arp -a\n? (192.168.1.1) at aa:bb:cc:dd:ee:ff [ether] on eth0\n? (192.168.1.50) at 11:22:33:44:55:66 [ether] on eth0\n? (192.168.1.105) at 77:88:99:aa:bb:cc [ether] on eth0\n? (192.168.1.120) at dd:ee:ff:11:22:33 [ether] on eth0",
+      "safety": "active",
+      "troubleshooting": "If the list is short, ping the broadcast address first to populate the ARP table: 'ping -c 1 192.168.1.255'. Then run arp -a again to see more devices.",
+      "legalNote": null
+    },
+    {
+      "command": "nmap --script http-default-accounts -p 80 192.168.1.1",
+      "description": "Check if your router is still using default login credentials. This nmap script tests common username/password combinations used by major router manufacturers.",
+      "expectedOutput": "hackeryoung@kali:~$ nmap --script http-default-accounts -p 80 192.168.1.1\nPORT   STATE SERVICE\n80/tcp open  http\n| http-default-accounts:\n|   [Router Admin Panel]\n|     credentials found: admin:admin\n|_    path: /login.html",
+      "safety": "active",
+      "troubleshooting": "If the script doesn't detect your router model, it may not have fingerprints for it. You can also manually try common defaults: admin/admin, admin/password, admin/1234, or check routerpasswords.com for your router brand.",
+      "legalNote": null
+    },
+    {
+      "command": "nmap --script http-security-headers -p 80,443 192.168.1.1",
+      "description": "Check what security headers your router's web interface sends. Missing headers like X-Frame-Options or Content-Security-Policy can make the admin panel vulnerable to attacks.",
+      "expectedOutput": "hackeryoung@kali:~$ nmap --script http-security-headers -p 80,443 192.168.1.1\nPORT    STATE SERVICE\n80/tcp  open  http\n| http-security-headers:\n|   missing: Strict-Transport-Security\n|   missing: X-Content-Type-Options\n|   present: X-Frame-Options: SAMEORIGIN\n|_  present: Content-Security-Policy: default-src 'self'",
+      "safety": "active",
+      "troubleshooting": null,
+      "legalNote": null
+    }
+  ],
+  "challenge": {
+    "question": "Log into your router's admin panel (192.168.1.1 in your browser), find the firmware version, and check the manufacturer's website for updates. While you're there, verify: Is WPS disabled? Is remote management off? Is the admin password still the default?",
+    "hint": "Open a browser and go to http://192.168.1.1 (or whatever ip route showed). Try admin/admin if you don't know the password. Look in the 'Administration', 'System', or 'Advanced' sections for WPS, remote management, and firmware settings. The firmware version is usually on the main status page.",
+    "answer": "If you can log in with admin/admin or admin/password, change it immediately — that's the single most important fix. WPS should be completely disabled (not just the button, but the PIN method too). Remote management should be off unless you specifically need it. For firmware, compare your version number to the latest on the manufacturer's support page and update if behind."
+  },
+  "realWorld": "In 2018, the VPNFilter malware infected over 500,000 routers across 54 countries. It targeted home routers from Linksys, MikroTik, Netgear, TP-Link, and others — all through known vulnerabilities in outdated firmware and default credentials. The malware could intercept web traffic, steal passwords, and even brick the router permanently. The FBI issued an emergency advisory telling everyone to reboot their routers. The attack was attributed to a state-sponsored group and could have been prevented in most cases by simply updating firmware and changing the default admin password.",
+  "funFact": "The default password for most routers is printed on a sticker on the bottom of the device. But here's the thing — many ISPs use the same algorithm to generate those 'unique' passwords from the router's serial number or MAC address. Security researchers have reverse-engineered these algorithms for several major ISPs, meaning if you know the router's MAC address (which is broadcast in every WiFi packet), you can calculate the default password without ever seeing the sticker. This is why changing from the default is essential."
+}
